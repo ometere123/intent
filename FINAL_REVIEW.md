@@ -1,10 +1,12 @@
 # Final source-level hostile review
 
-Review date: 2026-09-27
+Review date: 2026-09-28
 
 ## Outcome
 
-No known source-level P0/P1 issue remains after the final local hardening pass. This is **not** a claim of live deployment correctness: the environment cannot run the GenLayer toolchain, install frontend dependencies, sign with a funded Studionet wallet, or exercise real validators.
+No known source-level P0/P1 issue remains after the final hardening pass. Live
+GenLayer and Sepolia evidence is recorded in `LIVE_EVIDENCE.md`; this is not a
+claim of trustless cross-chain verification.
 
 ## Closed in the final pass
 
@@ -39,9 +41,17 @@ These are architectural or verification boundaries, not hidden claims:
 3. **Unknown ABI semantics:** custom/proxy calls are not guessed. Unknown meaning stays supporting/unclear unless the integration supplies bounded decode context.
 4. **Post-send receipt restoration:** after the target transaction is submitted, a user may reject the wallet switch used to anchor/restore. INTENT reports receipt/restoration failure but cannot roll back or resubmit the already-sent target transaction.
 5. **Studionet:** 61999 is the required GenLayer network for this project. The repository does not represent Studionet as a production settlement guarantee.
-6. **Live evidence:** GenVM lint, Direct Mode runtime, installed-dependency Next build, live 61999 deployment/consensus, fee measurements and browser-wallet E2E still require the online handoff.
+6. **Live evidence:** GenLayer fee measurements, browser-wallet E2E and a
+   publicly accessible production frontend remain separate verification work;
+   the existing frontend builds successfully, while Vercel currently fails
+   after build during its immutable static-file/preview-comment upload step.
+   The deployed Protected Account proof uses test-controlled 3-of-5 attestors
+   and an actual Sepolia Safe.
 7. **Single-use action hash:** one owner/action hash is adjudicated once by design. A workflow that intentionally repeats an otherwise byte-identical caller request must make the EIP-1193 request distinguishable (for example with an explicit valid transaction nonce) rather than replaying a prior semantic authorisation.
 
 ## Reviewer focus after live validation
 
-The continuation agent should spend time proving the frozen architecture rather than redesigning it: run current GenVM lint/Direct Mode, verify exact finality/execution semantics against deployed 61999, measure worst-bounded `evaluate` fees, run three real semantic outcomes, and exercise an actual inexpensive target-chain transaction through the guarded provider.
+The remaining strict-review questions are the test-controlled attestor trust
+assumption, the Windows Direct Mode file-locking issue, and the absence of a
+fresh current UNCLEAR protected-account result. The positive target-chain path is
+real and uses the official Safe v1.4.1 hash and Guard lifecycle.

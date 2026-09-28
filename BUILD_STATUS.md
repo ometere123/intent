@@ -15,6 +15,9 @@
 - cross-language canonical-action SHA-256 parity passes for representative JS/Python requests.
 - contract and Direct Mode test files pass Python syntax compilation.
 - frontend TypeScript typecheck and production build pass with installed dependencies.
+- the existing frontend build is green locally and on Vercel's build worker, but
+  no public production URL is claimed because Vercel fails after build during
+  its immutable static-file/preview-comment upload step.
 - executable/config source passes the Studionet-only chain scan.
 - no fail-open option exists in the wallet guard.
 - no 61997 preview-chain literal exists in executable/config source.
@@ -44,8 +47,11 @@
 
 - The native Windows Direct Mode harness has a temporary-file locking issue; the stable `v0.2.12` Direct Mode suite passes under WSL.
 - Static lint passes. Full `genvm-lint check` validation is not claimed because `genvm-linter 0.11.1rc2` cannot resolve the old `v0.2.12` runner archive format.
-- No external target-chain transaction was executed in the live run, so no execution-receipt anchor is claimed. See `LIVE_EVIDENCE.md`.
-- Sepolia Registry, Guard, Safe and attestor live deployment were not performed in this
-  environment because no Sepolia signer/RPC credentials are available. The target-chain
-  package is locally tested against the official Safe v1.4.1 implementation; no live
-  target-chain address or execution is claimed.
+- A real Sepolia Registry, Guard, Safe and demo target were deployed and exercised;
+  the exact admission, Safe execution and post-consumption readbacks are in
+  `LIVE_EVIDENCE.md`.
+- The current Windows machine still cannot execute the Direct Mode suite reliably
+  because the installed gltest loader hits a temporary-file sharing violation;
+  CI/WSL remains the authoritative Direct Mode runtime path.
+- A final current UNCLEAR protected-account decision was not reproduced, so it is
+  not claimed as live evidence.

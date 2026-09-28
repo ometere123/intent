@@ -59,10 +59,10 @@ contract ProtectedAccountTest {
         attestors[0] = vm.addr(1);
         registry = new IntentAuthorizationRegistry(address(0x1234), attestors, 1);
         guard = new IntentSafeGuard(address(safe), address(registry));
-        registry.registerGuard(address(safe), address(guard));
 
         bytes memory setGuard = abi.encodeWithSelector(safe.setGuard.selector, address(guard));
         safe.execTransaction(address(safe), 0, setGuard, Enum.Operation.Call, 0, 0, 0, address(0), payable(0), _ownerSignature());
+        registry.registerGuard(address(safe), address(guard));
     }
 
     function _admit(IntentAuthorizationRegistry registry, IntentAuthorizationRegistry.Certificate memory c) internal {

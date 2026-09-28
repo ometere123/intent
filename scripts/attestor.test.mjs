@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { safeTransactionHash, verifyFinalizedDecision } from './attestor.mjs';
+import { safeTransactionHash, verifyFinalizedDecision, requireFinalizedSuccessfulReceipt } from './attestor.mjs';
 
 const base = {
   targetChainId: 11155111n,
@@ -30,7 +30,13 @@ test('Safe v1.4.1 hash binds every transaction field', () => {
 
 test('attestor refuses accepted, non-final and non-MATCHES decisions', () => {
   const candidate = { ...base, genLayerChainId: 61999n, genLayerIntent: '0x0000000000000000000000000000000000000004', actionHash: safeTransactionHash(base), intentIdHash: '0x' + '11'.repeat(32), intentRevision: 1n, validUntil: BigInt(Math.floor(Date.now() / 1000) + 60) };
-  const decision = { outcome: 'MATCHES_INTENT', safe: candidate.safe, intentIdHash: candidate.intentIdHash, intentRevision: 1n };
+  const decision = { outcome: 'MATCHES_INTENT', intent_id: 'demo', intent_revision: 1, action: { ...base, execution_kind: 'SAFE', valueWei: '0' } };
   assert.throws(() => verifyFinalizedDecision({ candidate, decision, canonicalIntent: candidate.genLayerIntent, finalizedReceipt: { statusName: 'ACCEPTED', txExecutionResultName: 'FINISHED_WITH_RETURN' } }), /FINALIZED/);
   assert.throws(() => verifyFinalizedDecision({ candidate, decision: { ...decision, outcome: 'UNCLEAR' }, canonicalIntent: candidate.genLayerIntent, finalizedReceipt: { statusName: 'FINALIZED', txExecutionResultName: 'FINISHED_WITH_RETURN' } }), /MATCHES/);
+});
+
+test('finality rejects missing or contradictory validator execution evidence', () => {
+  assert.throws(() => requireFinalizedSuccessfulReceipt({ statusName: 'FINALIZED', consensus_data: { validators: [{ execution_result: 'FINISHED_WITH_ERROR' }] } }), /contradicts/);
+  assert.throws(() => requireFinalizedSuccessfulReceipt({ statusName: 'FINALIZED', consensus_data: { validators: [] } }), /insufficient/);
+  assert.doesNotThrow(() => requireFinalizedSuccessfulReceipt({ statusName: 'FINALIZED', consensus_data: { leader_receipt: [{ execution_result: 'FINISHED_WITH_RETURN' }], validators: [{ execution_result: 'FINISHED_WITH_RETURN' }] } }));
 });

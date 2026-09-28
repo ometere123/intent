@@ -79,9 +79,11 @@ mutation or replay. Successful execution consumes the one-time authorization.
 This is threshold-attested finalized GenLayer authorization, not a trustless
 cross-chain proof. The registry/attestor configuration is an explicit trust
 assumption, and Safe modules must remain disabled or receive equivalent protection.
-The repository contains the target-chain contracts and focused Solidity tests;
-Sepolia deployment and live Safe evidence must be recorded separately and are not
-represented as complete merely because the contracts compile.
+The repository contains the target-chain contracts and focused Solidity tests. A
+real Ethereum Sepolia Registry, Guard, official Safe v1.4.1 proxy and demo target
+are deployed and exercised; addresses and transaction evidence are recorded in
+`LIVE_EVIDENCE.md`. The five attestors are test-controlled keys, not independent
+operators.
 
 ## Example mandate
 

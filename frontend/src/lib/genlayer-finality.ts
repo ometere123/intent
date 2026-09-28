@@ -39,7 +39,7 @@ function executionEvidence(receipt: Record<string, unknown>): string[] {
   const consensus = receipt.consensus_data ?? receipt.consensusData;
   if (!consensus || typeof consensus !== 'object') return evidence;
   const consensusRecord = consensus as Record<string, unknown>;
-  for (const key of ['leader_receipt', 'leaderReceipt', 'validator_receipt', 'validatorReceipt', 'receipts']) {
+  for (const key of ['leader_receipt', 'leaderReceipt', 'validator_receipt', 'validatorReceipt', 'validators', 'receipts']) {
     const entries = consensusRecord[key];
     if (!Array.isArray(entries)) continue;
     for (const entry of entries) {

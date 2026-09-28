@@ -20,6 +20,7 @@
     "check:source-network": "node scripts/verify-studionet-only.mjs",
     "test:hash-parity": "npm --workspace packages/wallet-guard run build && node tests/cross-language/hash-parity.mjs",
     "test:attestor": "node --test scripts/attestor.test.mjs",
+    "attestor:run": "node scripts/run-attestor.mjs",
     "test": "npm run check:cli-pin && npm run test:sdk && npm run test:hash-parity && npm run check:source-network",
     "postdeploy:check": "node scripts/post-deploy-check.mjs",
     "cli:version": "node scripts/genlayer-local.mjs --version",

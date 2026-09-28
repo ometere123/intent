@@ -77,6 +77,70 @@ No external target-chain transaction was executed during this run, so `record_ex
 - No separate frontend product was added; the existing control plane now includes a
   Protected Account Mode reference page while remaining separate from the contract.
 
+## Protected Account Mode — live Sepolia evidence
+
+The following is a real test-controlled Sepolia deployment, separate from GenLayer
+Studionet. It is not a trustless GenLayer light client: the target-chain bridge is
+threshold-attested finalized GenLayer state.
+
+- Target network: Ethereum Sepolia, chain ID `11155111`
+- Registry: `0xdca0557775d387d28b3f46a49d011a1e93ba982a`
+  - deployment transaction: `0x9fd9be7eab3b186818f81acdda660b066d48755d3a453a6ca5b6b0419d396a80`
+- Safe v1.4.1 singleton: `0xec0d3a131b4ebb570a7bee77ebad24d1a4667492`
+- SafeProxyFactory: `0xf08f8869f56caccb20b152396618e188b4e45b7f`
+- protected Safe proxy: `0xe4eB50EB02bdBd611960c0629B3C779C1645a4c7`
+  - owner: `0x02d1cAaaa1C79Be548FD4Fd188dd7f851eCb9910`
+  - threshold: `1`
+  - setup transaction: `0x1c1e29d20c893e801dbf8f66187ddd26358fad9266e851236a159b8cf68b087d`
+- IntentSafeGuard: `0x9417cf657bf65e16f1eebc25b01083498ca9e703`
+  - deployment transaction: `0x3b9f360b7703516694f0147f572eb5b25ffc9d40d0d3920631d9a674b11ea2b7`
+  - Safe installation transaction: `0x896f4a7a1af4777306ce41b3afa9969c915bba65fcc6fc3ba77626c87a7fe606`
+  - Registry binding transaction: `0x4cc99093053a08cd35f6fdb51cc57cc75d32f9773c22c506fef50a6290eb7713`
+- Demo target: `0xa74a3a9db4747856b196d41e29d52e996079c458`
+  - deployment transaction: `0x74f2656a7fe597fa37e181fa17849fa91c0c1051f2983e65cf05a6bc87d91d95`
+- The live Safe module baseline was empty and the Safe storage guard slot read back
+  the deployed IntentSafeGuard before Registry registration.
+
+### Fresh finalized GenLayer decisions
+
+- Positive protected action, `protected-demo-9`, revision `1`:
+  - evaluate transaction: [`0x2cd5fa2dfd5bb5b22d7fa8ab8ce24ecb4388ef4d47e344c4e7fcd5f001afa172`](https://explorer-studio.genlayer.com/tx/0x2cd5fa2dfd5bb5b22d7fa8ab8ce24ecb4388ef4d47e344c4e7fcd5f001afa172)
+  - final result: `FINALIZED / MAJORITY_AGREE / SUCCESS`
+  - outcome read by the attestor: `MATCHES_INTENT / within_mandate`
+  - Safe nonce bound: `1`
+  - exact Safe transaction hash: `0x4d668c35edb41f1404cd656321812705b91fb530f00ece90a84a249a09fd37f7`
+- Negative protected action, `protected-demo-8`, revision `1`:
+  - evaluate transaction: [`0x0505f833a0d2c2a56ebf806534125d9292fa0c3cae2cfc0736367695b94f252f`](https://explorer-studio.genlayer.com/tx/0x0505f833a0d2c2a56ebf806534125d9292fa0c3cae2cfc0736367695b94f252f)
+  - final result: `FINALIZED / MAJORITY_AGREE / SUCCESS`
+  - outcome readback: `DOES_NOT_MATCH / mandate_conflict`
+- An `UNCLEAR` result was not reproduced on the final current action set; the
+  previous UNCLEAR record remains historical and is not presented as final-flow proof.
+
+### Attestation and exact Safe execution
+
+- The five configured public attestors were used as test-controlled keys; the live
+  certificate used a sorted 3-of-5 subset.
+- Positive certificate digest:
+  `0x6855e1c34db3774d6ad33d30bddeb3d79e1274d8a04bdde4c55f144f08755b80`
+- Registry admission transaction:
+  [`0x29420cddf1e0742b9f7a7c0d9bf589607fd5d85718360234d68681268ed70f87`](https://sepolia.etherscan.io/tx/0x29420cddf1e0742b9f7a7c0d9bf589607fd5d85718360234d68681268ed70f87)
+  - `isAuthorized(actionHash)` before execution: `true`
+  - signers: attestors 1, 2 and 3
+- Exact Safe execution transaction:
+  [`0x27ef89740ed8c981aa03c1fc80e521dee029f2dbe6c04a7934369b3962ed1c25`](https://sepolia.etherscan.io/tx/0x27ef89740ed8c981aa03c1fc80e521dee029f2dbe6c04a7934369b3962ed1c25)
+  - receipt status: `success`
+  - target `pingCount`: `1`
+  - target payload: `0x...03`
+  - target caller: the protected Safe
+  - `isAuthorized(actionHash)` after execution: `false`
+- Replay and mutation simulations against the live Safe both reverted. Delegatecall
+  simulation also reverted. These were rejected without claiming successful target
+  transactions for the negative cases.
+
+The existing Next.js control plane builds successfully. A public production URL is
+not claimed because the current Vercel deployment fails after the successful build
+during the platform's immutable static-file/preview-comment upload step.
+
 ## Operator diagnostics
 
 - Malformed wrapper invocations that passed pseudo-type tokens (`str`, `int`) or split JSON were rejected by the contract and are not successful lifecycle evidence.

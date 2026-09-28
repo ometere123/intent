@@ -51,7 +51,9 @@ The protocol proves a narrower statement: against one immutable human mandate re
 ## Live evidence
 
 The canonical hard-rule-bound deployment, transaction ID and real validator outcomes
-are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. No Sepolia
-Protected Account deployment or target-chain Safe execution is claimed yet; the
-target-chain package is locally compiled/tested and its attestation trust model is
-documented explicitly.
+are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. The same
+evidence file records the separate Ethereum Sepolia Registry, official Safe v1.4.1,
+Guard installation, test-controlled 3-of-5 certificate admission and exact Safe
+execution. The bridge is threshold-attested finalized GenLayer state, not a
+trustless GenLayer light client. A clean current UNCLEAR protected flow remains
+unreproduced and is explicitly not claimed.

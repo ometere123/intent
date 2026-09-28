@@ -1,47 +1,56 @@
-# Final local validation record
+# INTENT final validation record
 
 Date: 2026-09-28
 
-This file records what was actually executed in the preparation container. It deliberately separates green local evidence from checks that require dependencies, GenLayer tooling, network access or a funded wallet.
+## Repository and toolchain
 
-## Green here
+- GenLayer CLI: repository-local `0.39.1`
+- GenLayer network: Studionet, chain `61999`, RPC `https://studio.genlayer.com/api`
+- Canonical GenLayer contract: `0x7b26BC39E2A6aB74A677E558FC53E8b3a3fBe6Bf`
+- Canonical deployed source commit: `b886be91e8e756f49595c865c4b1ae0901a094d2`
+- Canonical deployed source SHA-256: `2e27aeb4635a4f2db0907cf67c5186d531fccb1ff34d3819c308cf5e02b01058`
 
-- `npm test` — PASS
-  - wallet-guard: **34/34** executable security/integration-boundary tests;
-  - JS/Python canonical action SHA-256 parity: **3/3 representative requests**;
-  - Studionet-only executable/config scan: PASS.
-- `npm --workspace packages/wallet-guard run typecheck` — PASS.
-- repository CLI manifest pin check — PASS: exact local dependency `genlayer@0.39.1`; wrapper refuses global/future CLI fallback. Actual binary execution awaits dependency installation.
-- `python -m py_compile contracts/intent_guard.py tests/direct/*.py` — PASS.
-- `pytest tests/direct --collect-only -q` — PASS: **22 Direct Mode tests collected**; actual fixture execution remains blocked until `genlayer-test` is installed.
-- TypeScript/TSX syntax parse using installed TypeScript 5.8.3 — PASS for **22 source files** across `frontend/src` and `packages/wallet-guard/src`.
-- Local GenVM AST safety precheck — PASS for the current documented safety categories checked here: dependency header present, no forbidden import set, no forbidden time/uuid calls, no float literals, no bare built-in exception raises.
-- Contract uses integer-only UTC epoch conversion; no `datetime.timestamp()` float round-trip in executable code.
+## Checks
 
-## Historical preparation notes
+- Wallet/security suite: **36 passed**
+- Attestor tests: **3 passed**
+- Safe/Registry Foundry suite: **8 passed**
+- Hash parity: **3/3 vectors passed**
+- Frontend typecheck/build: **PASS**
+- Preflight: **PASS**
+- GenVM lint: **PASS for the repository's supported static checks**
+- Direct Mode baseline: **24 passed in the verified CI/WSL path**. Native Windows
+  execution remains affected by the gltest temporary-file sharing violation.
 
-The original preparation-container blockers below are historical and were cleared in the online continuation environment.
+## Live GenLayer evidence
 
-### Frontend dependency typecheck/build
+- Positive protected action: evaluate tx
+  `0x2cd5fa2dfd5bb5b22d7fa8ab8ce24ecb4388ef4d47e344c4e7fcd5f001afa172`,
+  `FINALIZED / MAJORITY_AGREE / SUCCESS`, `MATCHES_INTENT`.
+- Negative protected action: evaluate tx
+  `0x0505f833a0d2c2a56ebf806534125d9292fa0c3cae2cfc0736367695b94f252f`,
+  `FINALIZED / MAJORITY_AGREE / SUCCESS`, `DOES_NOT_MATCH`.
+- A current final-contract `UNCLEAR` protected decision was not reproduced and is
+  not claimed here.
 
-`npm run typecheck` reaches the frontend after the wallet SDK typecheck passes, then fails because frontend dependencies are not installed (`next`, `react`, `genlayer-js`, React JSX types, workspace resolution).
+## Live Sepolia evidence
 
-`npm run build` builds the wallet SDK and then stops at the frontend with `next: not found`.
+- Registry: `0xdca0557775d387d28b3f46a49d011a1e93ba982a`
+- Guard: `0x9417cf657bf65e16f1eebc25b01083498ca9e703`
+- Safe v1.4.1 proxy: `0xe4eB50EB02bdBd611960c0629B3C779C1645a4c7`
+- Demo target: `0xa74a3a9db4747856b196d41e29d52e996079c458`
+- Certificate admission: `0x29420cddf1e0742b9f7a7c0d9bf589607fd5d85718360234d68681268ed70f87`
+- Exact Safe execution: `0x27ef89740ed8c981aa03c1fc80e521dee029f2dbe6c04a7934369b3962ed1c25`
+- The target `pingCount` changed to `1`, and the authorization read back `false`
+  after execution. Replay, mutation and delegatecall simulations reverted.
 
-Registry reachability was checked with `npm ping --fetch-timeout=5000 --fetch-retries=0` and failed with `EAI_AGAIN` resolving `registry.npmjs.org`.
+## Limitations
 
-### GenLayer runtime tooling
-
-`genvm-lint`, the local `genlayer` package, and `gltest` are not installed in this container. The Direct Mode suite now collects to the expected GenLayer fixture boundary, but cannot execute because the `genlayer-test` pytest plugin is unavailable. Therefore the repository does **not** claim:
-
-- official `genvm-lint` green;
-- actual Direct Mode runtime green;
-- CLI deployment or fee estimation green.
-
-### Live Studionet
-
-These statements describe the 2026-09-27 preparation container only. The live deployment and finalized validator evidence are recorded in `LIVE_EVIDENCE.md`.
-
-## Handoff command order
-
-The continuation was completed with dependency installation, stable Studionet verification, deployment, Direct Mode, frontend build, and finalized live consensus evidence. See `DEPLOYMENT.md` and `LIVE_EVIDENCE.md`.
+The attestors are five test-controlled keys operated under a 3-of-5 threshold;
+they are not independent operators. This is threshold-attested finalized
+GenLayer authorization, not a native trustless GenLayer light client. Browser
+wallet E2E, a publicly accessible production frontend, and a fresh current
+UNCLEAR protected flow remain unclaimed. The existing frontend builds
+successfully, but Vercel currently fails after build during its immutable
+static-file/preview-comment upload step, so no deployment URL is claimed as
+the public production frontend.

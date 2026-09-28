@@ -42,6 +42,14 @@ On Windows, use WSL for the Direct Mode suite if the native temporary-file locki
 
 See [`LIVE_EVIDENCE.md`](LIVE_EVIDENCE.md) for finalized transaction hashes, consensus outcomes, state readbacks, action IDs, and the explicit execution-receipt limitation. Do not infer target-chain execution from a positive intent decision: a receipt is only valid after a real target-chain transaction is supplied and bound.
 
+The Protected Account reference deployment is recorded in the same evidence file:
+Ethereum Sepolia Registry `0xdca0557775d387d28b3f46a49d011a1e93ba982a`, Guard
+`0x9417cf657bf65e16f1eebc25b01083498ca9e703`, protected Safe
+`0xe4eB50EB02bdBd611960c0629B3C779C1645a4c7`, and demo target
+`0xa74a3a9db4747856b196d41e29d52e996079c458`. The exact admission and Safe
+execution transactions are recorded only after their Sepolia receipts and state
+readbacks were observed.
+
 ## Network guard
 
 Before signing or submitting a transaction, require the active environment to report exactly:

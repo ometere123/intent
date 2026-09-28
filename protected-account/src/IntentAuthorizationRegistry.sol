@@ -8,6 +8,7 @@ interface IGuardBinding {
 
 interface ISafeModules {
     function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] memory array, address next);
+    function getStorageAt(uint256 offset, uint256 length) external view returns (bytes memory);
 }
 
 /// @notice Target-chain admission layer for finalized, threshold-attested INTENT decisions.
@@ -22,6 +23,7 @@ contract IntentAuthorizationRegistry {
     bytes32 private constant CERTIFICATE_TYPEHASH = keccak256("Certificate(string protocolVersion,uint256 genLayerChainId,address genLayerIntent,bytes32 decisionRef,uint256 targetChainId,address safe,bytes32 actionHash,bytes32 intentIdHash,uint256 intentRevision,uint256 safeNonce,uint256 authorizationNonce,uint256 validAfter,uint256 validUntil,bytes32 outcome)");
     bytes32 private constant MATCHES_INTENT = keccak256("MATCHES_INTENT");
     uint256 private constant HALF_ORDER = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
+    uint256 private constant GUARD_STORAGE_SLOT = uint256(0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8);
 
     address public immutable canonicalGenLayerIntent;
     address public owner;
@@ -114,6 +116,11 @@ contract IntentAuthorizationRegistry {
         require(guardForSafe[safe] == address(0), "guard already registered");
         (address[] memory modules,) = ISafeModules(safe).getModulesPaginated(address(0x1), 1);
         require(modules.length == 0, "Safe has modules");
+        bytes memory guardSlot = ISafeModules(safe).getStorageAt(GUARD_STORAGE_SLOT, 1);
+        require(guardSlot.length == 32, "Safe guard unreadable");
+        bytes32 guardWord;
+        assembly ("memory-safe") { guardWord := mload(add(guardSlot, 32)) }
+        require(address(uint160(uint256(guardWord))) == guard, "Safe guard not installed");
         require(IGuardBinding(guard).safe() == safe && IGuardBinding(guard).registry() == address(this), "guard binding");
         guardForSafe[safe] = guard;
         emit GuardRegistered(safe, guard);

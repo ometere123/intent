@@ -26,7 +26,7 @@ Date: 2026-09-28
 ## Live GenLayer evidence
 
 - Positive protected action: evaluate tx
-  `0x2cd5fa2dfd5bb5b22d7fa8ab8ce24ecb4388ef4d47e344c4e7fcd5f001afa172`,
+  `0x466171198c2bd76f01258bcc274e40d104a945aedc3bb570c4776a8f0704c90e`,
   `FINALIZED / MAJORITY_AGREE / SUCCESS`, `MATCHES_INTENT`.
 - Negative protected action: evaluate tx
   `0x0505f833a0d2c2a56ebf806534125d9292fa0c3cae2cfc0736367695b94f252f`,

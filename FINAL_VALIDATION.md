@@ -56,9 +56,8 @@ The Registry binds this Safe to policy owner
 
 The attestors are five test-controlled keys operated under a 3-of-5 threshold;
 they are not independent operators. This is threshold-attested finalized
-GenLayer authorization, not a native trustless GenLayer light client. Browser
-wallet E2E, a publicly accessible production frontend, and a fresh current
-UNCLEAR protected flow remain unclaimed. The existing frontend builds
-successfully, but Vercel currently fails after build during its immutable
-static-file/preview-comment upload step, so no deployment URL is claimed as
-the public production frontend.
+GenLayer authorization, not a native trustless GenLayer light client. The
+reviewer-facing frontend is publicly deployed at
+`https://intent-beta-jade.vercel.app` and its root HTML was externally verified
+over HTTPS. Browser-wallet signing E2E and a fresh current UNCLEAR protected flow
+remain unclaimed.

@@ -41,12 +41,11 @@ These are architectural or verification boundaries, not hidden claims:
 3. **Unknown ABI semantics:** custom/proxy calls are not guessed. Unknown meaning stays supporting/unclear unless the integration supplies bounded decode context.
 4. **Post-send receipt restoration:** after the target transaction is submitted, a user may reject the wallet switch used to anchor/restore. INTENT reports receipt/restoration failure but cannot roll back or resubmit the already-sent target transaction.
 5. **Studionet:** 61999 is the required GenLayer network for this project. The repository does not represent Studionet as a production settlement guarantee.
-6. **Live evidence:** GenLayer fee measurements, browser-wallet E2E and a
-   publicly accessible production frontend remain separate verification work;
-   the existing frontend builds successfully, while Vercel currently fails
-   after build during its immutable static-file/preview-comment upload step.
-   The deployed Protected Account proof uses test-controlled 3-of-5 attestors
-   and an actual Sepolia Safe.
+6. **Live evidence:** GenLayer fee measurements and browser-wallet E2E remain
+   separate verification work. The reviewer-facing frontend is publicly
+   deployed at `https://intent-beta-jade.vercel.app` and the root HTML was
+   externally verified over HTTPS. The deployed Protected Account proof uses
+   test-controlled 3-of-5 attestors and an actual Sepolia Safe.
 7. **Single-use action hash:** one owner/action hash is adjudicated once by design. A workflow that intentionally repeats an otherwise byte-identical caller request must make the EIP-1193 request distinguishable (for example with an explicit valid transaction nonce) rather than replaying a prior semantic authorisation.
 
 ## Reviewer focus after live validation

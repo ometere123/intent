@@ -58,9 +58,14 @@ The CLI wrapper was not used for these successful writes because its Windows she
 - `demo-intent` revocation: [`0x21cca906678eea8d69069de99aa727242c942b3788b7a5c58698587a17681f6f`](https://explorer-studio.genlayer.com/tx/0x21cca906678eea8d69069de99aa727242c942b3788b7a5c58698587a17681f6f)
 - Both finalized as `ACCEPTED / MAJORITY_AGREE / SUCCESS`.
 
-## Execution-receipt anchor
+## Compatibility-mode execution anchor
 
-No external target-chain transaction was executed during this run, so `record_execution_receipt` was not called and no target transaction hash is claimed. This is an explicit remaining live-evidence limitation; the contract's receipt-binding path remains covered by Direct Mode tests.
+The historical Compatibility Mode run documented here did not call
+`record_execution_receipt`; it therefore makes no Compatibility Mode claim about
+an externally verified target-chain receipt. Protected Account Mode is separate:
+the canonical Sepolia section below records a real Safe execution and target
+state readback. The Compatibility Mode receipt-binding path remains covered by
+Direct Mode tests.
 
 ## Tooling and verification
 
@@ -195,9 +200,11 @@ state.
   simulation also reverted. These were rejected without claiming successful target
   transactions for the negative cases.
 
-The existing Next.js control plane builds successfully. A public production URL is
-not claimed because the current Vercel deployment fails after the successful build
-during the platform's immutable static-file/preview-comment upload step.
+The existing Next.js control plane builds successfully and is deployed at
+[`https://intent-beta-jade.vercel.app`](https://intent-beta-jade.vercel.app).
+The production deployment was verified with an external HTTPS request returning
+HTTP 200 and the INTENT application HTML. Browser-wallet signing E2E remains a
+separate unclaimed verification item.
 
 ## Operator diagnostics
 

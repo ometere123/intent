@@ -15,9 +15,10 @@
 - cross-language canonical-action SHA-256 parity passes for representative JS/Python requests.
 - contract and Direct Mode test files pass Python syntax compilation.
 - frontend TypeScript typecheck and production build pass with installed dependencies.
-- the existing frontend build is green locally and on Vercel's build worker, but
-  no public production URL is claimed because Vercel fails after build during
-  its immutable static-file/preview-comment upload step.
+- the reviewer-facing frontend is deployed at
+  `https://intent-beta-jade.vercel.app`; an external HTTPS smoke request returned
+  HTTP 200 and the INTENT application HTML. Browser-wallet signing E2E remains
+  unclaimed.
 - executable/config source passes the Studionet-only chain scan.
 - no fail-open option exists in the wallet guard.
 - no 61997 preview-chain literal exists in executable/config source.

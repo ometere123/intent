@@ -30,6 +30,8 @@ INTENT does not ask one application backend to decide whether an ambiguous trans
 - Intelligent Contract in `contracts/intent_guard.py`;
 - Next.js control plane for mandate creation, revision, revocation, analysis, activity and integration;
 - reviewer-focused Direct Mode, hash-parity and SDK security tests.
+- Protected Account Mode target-chain package under `protected-account/`, with a
+  threshold-attested EIP-712 registry and Safe Guard for exact one-time actions.
 
 ## Network
 
@@ -47,4 +49,8 @@ The protocol proves a narrower statement: against one immutable human mandate re
 
 ## Live evidence
 
-Deployment address, transaction IDs and real validator outcomes are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. The live run did not execute a target-chain transaction, so no execution-receipt anchor is claimed.
+The canonical hard-rule-bound deployment, transaction ID and real validator outcomes
+are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. No Sepolia
+Protected Account deployment or target-chain Safe execution is claimed yet; the
+target-chain package is locally compiled/tested and its attestation trust model is
+documented explicitly.

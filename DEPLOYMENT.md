@@ -8,11 +8,17 @@ INTENT deploys only to GenLayer Studionet.
 - Explorer: `https://explorer-studio.genlayer.com`
 - Repository-local CLI: `genlayer@0.39.1`
 - Deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`
-- Contract: `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D`
-- Deployment transaction: `0x4367d3fa31f2a1cfc67315a514bc3fefde19471aa6436e8a9e1c01069127a3c2`
-- Deployment result: `ACCEPTED / MAJORITY_AGREE / SUCCESS`
-- Source bytes: `20,721`
-- Source SHA-256: `27ce002c89b38f6e4263d7bba23dc4b15900443edd909bbfcd9fa0ccaaf40376`
+- Canonical contract: `0x7b26BC39E2A6aB74A677E558FC53E8b3a3fBe6Bf`
+- Canonical deployment transaction: `0x248fa17255d25a16bd6e10764163ecf2448c6af7df07ddda2523bfd6cff3fe38`
+- Canonical deployment result: `FINALIZED / MAJORITY_AGREE / SUCCESS`
+- Canonical source commit: `b886be91e8e756f49595c865c4b1ae0901a094d2`
+- Canonical source bytes: `25,435`
+- Canonical source SHA-256: `2e27aeb4635a4f2db0907cf67c5186d531fccb1ff34d3819c308cf5e02b01058`
+
+The previous `1.1.0` deployment at `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D`
+(`0x4367d3fa31f2a1cfc67315a514bc3fefde19471aa6436e8a9e1c01069127a3c2`) is
+superseded by this `1.2.0` deployment, which binds hard rules into immutable
+intent revisions. It remains historical evidence only.
 
 The deployment used the working-tree source representation derived from baseline commit `dbe38adfd4b8984c7c10f6221f4834555ef8dba0`. Git normalizes text line endings in the committed blob, so the recorded deployment bytes/hash are preserved as observed evidence and are not claimed as raw byte-for-byte Git-blob parity.
 

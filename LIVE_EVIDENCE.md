@@ -8,15 +8,34 @@ This record contains observed Studionet evidence for the deployed contract. All 
 - Chain ID: `61999`
 - RPC: `https://studio.genlayer.com/api`
 - Deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`
-- Contract address: `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D`
-- Deployment transaction: [`0x4367d3fa31f2a1cfc67315a514bc3fefde19471aa6436e8a9e1c01069127a3c2`](https://explorer-studio.genlayer.com/tx/0x4367d3fa31f2a1cfc67315a514bc3fefde19471aa6436e8a9e1c01069127a3c2)
-- Deployment result: `ACCEPTED / MAJORITY_AGREE / SUCCESS`
-- Post-deployment `get_network`: `chain_id=61999`, `contract_version=1.1.0`, `name=GenLayer Studionet`
-- Source bytes submitted: `20,721`
-- Source SHA-256: `27ce002c89b38f6e4263d7bba23dc4b15900443edd909bbfcd9fa0ccaaf40376`
-- Source note: deployment used the working-tree source representation derived from baseline commit `dbe38adfd4b8984c7c10f6221f4834555ef8dba0`. Git normalizes text line endings in the committed blob, so this record does not claim raw byte-for-byte identity between the deployment capture and the Git blob; the contract implementation and semantics are the same.
+- Canonical contract address: `0x7b26BC39E2A6aB74A677E558FC53E8b3a3fBe6Bf`
+- Deployment transaction: [`0x248fa17255d25a16bd6e10764163ecf2448c6af7df07ddda2523bfd6cff3fe38`](https://explorer-studio.genlayer.com/tx/0x248fa17255d25a16bd6e10764163ecf2448c6af7df07ddda2523bfd6cff3fe38)
+- Deployment result: `FINALIZED / MAJORITY_AGREE / SUCCESS`
+- Deployed source commit: `b886be91e8e756f49595c865c4b1ae0901a094d2`
+- Post-deployment `get_network`: `chain_id=61999`, `contract_version=1.2.0`, `name=GenLayer Studionet`
+- Source bytes submitted: `25,435`
+- Source SHA-256: `2e27aeb4635a4f2db0907cf67c5186d531fccb1ff34d3819c308cf5e02b01058`
 
-## Live flow transactions
+The previous `1.1.0` deployment at `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D` is
+superseded historical evidence. The final deployment adds immutable on-chain hard
+rules; the current contract source and deployment metadata above are canonical.
+
+## Superseded 1.1 live flow transactions
+
+The following finalized semantic writes were executed against the previous
+`1.1.0` deployment and are retained as historical evidence. They are not claims
+about state on the canonical `1.2.0` deployment above. The new deployment has
+only been post-deployment smoke-checked so far; fresh intent/evaluation lifecycle
+evidence must be collected before presenting it as a protected-account proof.
+
+The first canonical-1.2.0 smoke attempts are not lifecycle evidence. Transaction
+`0x4805e87e6b537aa18c7fe298d31cdcc8982d63db0ae0c6a6e770cb38dca3e304` used
+unsupported `str:` pseudo-type tokens and finalized with a Python argument-count
+error. Transactions `0x138753495e8fc5f08cc7959765a2acf3b019505fce4eb37a4eb22cbbcc1f3400`
+and `0xc636e08dd7ddc53340e69e06c59afa711bd7fd823810430b0a6c1d941af11da1`
+were rejected because the CLI transmitted JSON-looking values as objects instead
+of the required JSON strings. No successful intent state is claimed from these
+operator/encoding diagnostics.
 
 The CLI wrapper was not used for these successful writes because its Windows shell forwarding split spaced arguments and treated pseudo-type tokens as literal arguments. Writes were submitted with the local `genlayer@0.39.1` binary directly; calldata shown by the receipts contains the intended arguments.
 
@@ -48,14 +67,15 @@ No external target-chain transaction was executed during this run, so `record_ex
 
 - Repository-local CLI: `genlayer@0.39.1`
 - Active network: Studionet, chain `61999`, `https://studio.genlayer.com/api`
-- JavaScript SDK tests: `34 passed`
+- JavaScript SDK tests: `36 passed`
 - Hash parity: passed for 3 representative requests
-- Direct Mode: `22 passed`
+- Direct Mode: `24 passed`
 - Frontend typecheck: passed
 - Frontend production build: passed
 - Static GenVM lint: passed (`3 checks`)
 - Full linter validation was not claimed: `genvm-linter 0.11.1rc2` could not resolve the old v0.2.12 runner archive format. This is a tooling artifact limitation, not a live execution failure.
-- No frontend was added; the existing control plane remains separate from the contract.
+- No separate frontend product was added; the existing control plane now includes a
+  Protected Account Mode reference page while remaining separate from the contract.
 
 ## Operator diagnostics
 

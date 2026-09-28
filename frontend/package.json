@@ -13,7 +13,8 @@
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "@intent/wallet-guard": "file:../packages/wallet-guard"
+    "@intent/wallet-guard": "file:../packages/wallet-guard",
+    "viem": "^2.56.9"
   },
   "devDependencies": {
     "@types/node": "^24.9.1",

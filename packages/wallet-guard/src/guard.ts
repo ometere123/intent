@@ -1,6 +1,7 @@
 import { actionId, canonicaliseAction, chainHex, sameAction } from './canonical.js';
 import { deterministicChecks } from './checks.js';
 import { describeKnownAction } from './describe.js';
+import { stableStringify } from './canonical.js';
 import type {
   EIP1193Provider,
   EIP1193RequestArguments,
@@ -209,6 +210,18 @@ export class IntentGuardProvider implements EIP1193Provider {
     }
     if (!sameAction(action, rechecked) || (await actionId(rechecked)) !== id) {
       throw new IntentGuardError('INTENT_ACTION_CHANGED', 'Target transaction changed after GenLayer adjudication.');
+    }
+
+    if (this.options.recheckIntent) {
+      let authoritative: Awaited<ReturnType<NonNullable<GuardOptions['recheckIntent']>>>;
+      try {
+        authoritative = await this.options.recheckIntent(tx);
+      } catch (error) {
+        throw new IntentGuardError('INTENT_AUTHORITY_UNAVAILABLE', error instanceof Error ? error.message : String(error));
+      }
+      if (stableStringify(authoritative) !== stableStringify(intent)) {
+        throw new IntentGuardError('INTENT_AUTHORITY_CHANGED', 'Intent authority changed during adjudication.');
+      }
     }
 
     this.emit({ type: 'forwarding', detail: { actionId: id } });

@@ -205,6 +205,27 @@ test('gas or fee mutation after capture cannot change the forwarded request', as
   assert.equal(feeSends[0].params[0].maxFeePerGas, '0x10');
 });
 
+test('authority is re-read immediately before forwarding and stale revisions fail closed', async () => {
+  const base = provider({ chainId: 8453 });
+  let reads = 0;
+  const guarded = new IntentGuardProvider(base, {
+    resolveIntent: async () => intent(1),
+    recheckIntent: async () => {
+      reads += 1;
+      return intent(2);
+    },
+    evaluator: {
+      evaluate: async ({ actionId }) => { base.setChain(61999); return matching(actionId, 1); },
+    },
+  });
+  await assert.rejects(
+    () => guarded.request({ method: 'eth_sendTransaction', params: [{ from: addr('a'), to: addr('b'), data: '0xabcdef01' }] }),
+    /authority changed/i,
+  );
+  assert.equal(reads, 1);
+  assert.equal(base.calls.filter((x) => x.method === 'eth_sendTransaction').length, 0);
+});
+
 test('getter and queued microtask mutations cannot alter the snapshot', async () => {
   const base = provider({ chainId: 8453 });
   let currentTo = addr('b');

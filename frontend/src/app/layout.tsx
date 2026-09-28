@@ -11,6 +11,7 @@ const nav = [
   ['/', 'Overview'],
   ['/intents/new', 'New intent'],
   ['/analyse', 'Analyse transaction'],
+  ['/protected', 'Protected account'],
   ['/activity', 'Activity'],
   ['/integrate', 'Integrate'],
   ['/settings', 'Settings'],

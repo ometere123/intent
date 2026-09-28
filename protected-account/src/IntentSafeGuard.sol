@@ -52,7 +52,9 @@ contract IntentSafeGuard {
         require(msg.sender == safe, "only Safe");
         if (to == safe && data.length >= 4 && bytes4(data[:4]) == SET_GUARD) {
             address replacement;
-            assembly { replacement := calldataload(data.offset) }
+            // `data` includes the Safe call selector. The address argument
+            // begins after that four-byte selector.
+            assembly { replacement := shr(96, calldataload(add(data.offset, 4))) }
             require(replacement == address(0) && removalRequestedAt != 0 && block.timestamp >= removalRequestedAt + REMOVAL_DELAY, "protected guard");
         }
         if (to == address(this) && data.length >= 4 && (bytes4(data[:4]) == REQUEST_REMOVAL || bytes4(data[:4]) == CANCEL_REMOVAL)) {

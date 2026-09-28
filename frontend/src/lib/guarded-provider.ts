@@ -11,14 +11,16 @@ export function createIntentProtectedProvider(options:{
   onEvent?:(event:GuardEvent)=>void;
 }){
   const {provider,contractAddress,intentId,hardRules,describeAction,onEvent}=options;
+  const readIntent=async()=>{
+    const accounts=await provider.request({method:'eth_accounts'}) as string[];
+    const owner=accounts?.[0];
+    if(!owner) throw new Error('No selected wallet account.');
+    return resolveLatestIntent(owner,intentId,hardRules);
+  };
   return new IntentGuardProvider(provider,{
     evaluator:createGenLayerIntentEvaluator({contractAddress,genLayerProvider:provider}),
-    resolveIntent:async()=>{
-      const accounts=await provider.request({method:'eth_accounts'}) as string[];
-      const owner=accounts?.[0];
-      if(!owner) throw new Error('No selected wallet account.');
-      return resolveLatestIntent(owner,intentId,hardRules);
-    },
+    resolveIntent:readIntent,
+    recheckIntent:readIntent,
     describeAction,
     onEvent,
   });

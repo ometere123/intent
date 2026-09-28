@@ -100,6 +100,8 @@ export interface IntentEvaluator {
 export interface GuardOptions {
   evaluator: IntentEvaluator;
   resolveIntent(transaction: WalletTransaction): Promise<IntentDefinition>;
+  /** Re-read the authoritative on-chain revision immediately before forwarding. */
+  recheckIntent?: (transaction: WalletTransaction) => Promise<IntentDefinition>;
   /** Optional deterministic ABI/order decoder. Its output is supporting evidence only; the canonical request stays authoritative. */
   describeAction?: (action: CanonicalAction, transaction: WalletTransaction) => Promise<string> | string;
   onEvent?: (event: GuardEvent) => void;

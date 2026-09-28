@@ -1,7 +1,8 @@
 [profile.default]
 src = "src"
 test = "test"
-solc_version = "0.8.24"
+solc_version = "0.8.19"
 optimizer = true
 optimizer_runs = 200
-via_ir = true
+via_ir = false
+remappings = ["safe-smart-account/=lib/safe-smart-account/contracts/"]

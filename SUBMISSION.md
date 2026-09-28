@@ -31,7 +31,8 @@ INTENT does not ask one application backend to decide whether an ambiguous trans
 - Next.js control plane for mandate creation, revision, revocation, analysis, activity and integration;
 - reviewer-focused Direct Mode, hash-parity and SDK security tests.
 - Protected Account Mode target-chain package under `protected-account/`, with a
-  threshold-attested EIP-712 registry and Safe Guard for exact one-time actions.
+  threshold-attested EIP-712 registry and official Safe v1.4.1 Guard for exact
+  one-time actions; 8 Foundry tests exercise a real Safe proxy locally.
 
 ## Network
 

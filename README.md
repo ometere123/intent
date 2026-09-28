@@ -71,8 +71,9 @@ optional execution receipt anchored back to INTENT
 For stronger enforcement, assets are held by a Safe on Ethereum Sepolia rather
 than an ordinary EOA. A finalized successful `MATCHES_INTENT` decision is converted
 by a threshold of attestors into an EIP-712 certificate admitted to
-`IntentAuthorizationRegistry`. `IntentSafeGuard` binds the exact Safe, Sepolia
-chain, Safe nonce, recipient, value, calldata hash and operation, and rejects any
+`IntentAuthorizationRegistry`. `IntentSafeGuard` uses the official Safe v1.4.1
+transaction hash, binding the exact Safe, Sepolia chain, nonce, recipient, value,
+calldata, operation and gas/refund fields, and rejects any
 mutation or replay. Successful execution consumes the one-time authorization.
 
 This is threshold-attested finalized GenLayer authorization, not a trustless

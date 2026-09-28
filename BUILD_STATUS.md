@@ -7,7 +7,11 @@
 - GenLayer runner dependency pin matches the current official project boilerplate checked on 2026-09-27.
 - Python dev dependencies are aligned with current official boilerplate pins (`genlayer-py` v0.18, `genlayer-test` v0.29, current `genvm-linter`).
 - wallet-guard TypeScript compiles with TypeScript 5.8.3.
-- **34 executable wallet-guard security tests pass**.
+- **36 executable wallet-guard security tests pass**.
+- **8 official Safe v1.4.1 protected-account tests pass**, including real Safe proxy
+  installation, full Safe transaction-hash parity, nonce binding, expiry, mutation,
+  failed-inner-call consumption, delegatecall blocking and delayed guard removal.
+- Two reference-attestor hash/finality rejection tests pass.
 - cross-language canonical-action SHA-256 parity passes for representative JS/Python requests.
 - contract and Direct Mode test files pass Python syntax compilation.
 - frontend TypeScript typecheck and production build pass with installed dependencies.
@@ -33,9 +37,15 @@
 - finalized + successful GenVM execution requirement before a decision is consumed;
 - consensus-backed `outcome` and coarse `reason_code`; free-form rationale is explicitly non-authoritative;
 - optional receipt anchoring is post-send audit metadata and cannot resubmit a target transaction.
+- the finality helper requires FINALIZED plus non-contradictory authoritative execution
+  evidence, including Studio consensus leader/validator receipt structures when present.
 
 ## Explicit limitations
 
 - The native Windows Direct Mode harness has a temporary-file locking issue; the stable `v0.2.12` Direct Mode suite passes under WSL.
 - Static lint passes. Full `genvm-lint check` validation is not claimed because `genvm-linter 0.11.1rc2` cannot resolve the old `v0.2.12` runner archive format.
 - No external target-chain transaction was executed in the live run, so no execution-receipt anchor is claimed. See `LIVE_EVIDENCE.md`.
+- Sepolia Registry, Guard, Safe and attestor live deployment were not performed in this
+  environment because no Sepolia signer/RPC credentials are available. The target-chain
+  package is locally tested against the official Safe v1.4.1 implementation; no live
+  target-chain address or execution is claimed.

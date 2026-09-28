@@ -27,16 +27,42 @@ function name(value: unknown, numeric: Record<string, string>): string {
   return '';
 }
 
+function executionEvidence(receipt: Record<string, unknown>): string[] {
+  const evidence: string[] = [];
+  const add = (value: unknown) => {
+    const parsed = name(value, EXECUTION_BY_NUMBER);
+    if (parsed) evidence.push(parsed);
+  };
+  add(receipt.txExecutionResultName);
+  add(receipt.tx_execution_result_name);
+  add(receipt.txExecutionResult);
+  const consensus = receipt.consensus_data ?? receipt.consensusData;
+  if (!consensus || typeof consensus !== 'object') return evidence;
+  const consensusRecord = consensus as Record<string, unknown>;
+  for (const key of ['leader_receipt', 'leaderReceipt', 'validator_receipt', 'validatorReceipt', 'receipts']) {
+    const entries = consensusRecord[key];
+    if (!Array.isArray(entries)) continue;
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object') continue;
+      const item = entry as Record<string, unknown>;
+      add(item.execution_result ?? item.executionResult ?? item.tx_execution_result ?? item.txExecutionResult);
+    }
+  }
+  return evidence;
+}
+
 export function classifyGenLayerReceipt(receipt: unknown): GenLayerLifecycleState {
   if (!receipt || typeof receipt !== 'object') return 'UNKNOWN_EXECUTION_STATE';
   const raw = receipt as Record<string, unknown>;
   const status = name(raw.statusName ?? raw.status_name ?? raw.status, STATUS_BY_NUMBER);
-  const execution = name(raw.txExecutionResultName ?? raw.tx_execution_result_name ?? raw.txExecutionResult, EXECUTION_BY_NUMBER);
   const result = name(raw.resultName ?? raw.result_name ?? raw.result, {});
 
   if (status === 'FINALIZED') {
-    if (execution === 'FINISHED_WITH_RETURN') return 'FINALIZED_EXECUTION_SUCCESS';
-    if (execution === 'FINISHED_WITH_ERROR') return 'FINALIZED_EXECUTION_ERROR';
+    const evidence = executionEvidence(raw);
+    const hasSuccess = evidence.includes('FINISHED_WITH_RETURN');
+    const hasError = evidence.includes('FINISHED_WITH_ERROR');
+    if (hasSuccess && !hasError) return 'FINALIZED_EXECUTION_SUCCESS';
+    if (hasError && !hasSuccess) return 'FINALIZED_EXECUTION_ERROR';
     return 'UNKNOWN_EXECUTION_STATE';
   }
   if (status === 'ACCEPTED') return 'ACCEPTED';

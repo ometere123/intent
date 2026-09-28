@@ -6,10 +6,19 @@ for exact one-time Safe actions. `IntentSafeGuard` requires the registry authori
 before a Safe transaction and consumes it after successful execution.
 
 The registry is an attestation bridge, not a trustless GenLayer light client. The
-certificate must bind Studionet chain 61999, the deployed INTENT contract, finalized
-decision reference, protected Safe, Sepolia chain 11155111, Safe nonce, recipient,
-value, calldata hash, operation, intent revision and expiry. Test-controlled attestor
-keys are an explicit trust assumption until a native proof verifier replaces the registry.
+certificate must bind Studionet chain 61999, the canonical INTENT contract, finalized
+decision reference, protected Safe, Sepolia chain 11155111, the Safe v1.4.1 transaction
+hash (including safeTxGas, baseGas, gasPrice, gasToken and refundReceiver), Safe nonce,
+intent revision and expiry. Test-controlled attestor keys are an explicit trust
+assumption until a native proof verifier replaces the registry.
 
-The Safe must have no enabled modules that bypass the Safe Guard. Module execution is
-an independent Safe execution path and is not secured by `checkTransaction` alone.
+The registry refuses activation for a Safe with enabled modules, and the Guard blocks
+module/fallback configuration and delegatecall through ordinary Safe transactions.
+Module execution is still an independent Safe execution path, so deployments must keep
+the module set empty and preserve that invariant after activation.
+
+The Guard uses the real Safe v1.4.1 execution order: Safe increments its nonce before
+calling `checkTransaction`, so the guarded transaction is bound to `safe.nonce() - 1`.
+Recovery calls are recorded by their real Safe transaction hash and require the fixed
+delay before `setGuard(0)` is permitted. A failed inner transaction still consumes its
+Safe nonce; the one-time authorization is therefore consumed in `checkAfterExecution`.

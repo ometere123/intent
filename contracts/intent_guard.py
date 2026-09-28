@@ -13,6 +13,12 @@ MAX_SCOPE_JSON = 8000
 MAX_ACTION_JSON = 14000
 MAX_SUMMARY = 8000
 MAX_CHECKS_JSON = 6000
+MAX_HARD_RULES_JSON = 8000
+HARD_RULE_KEYS = {
+    "allowedTargetChainIds", "forbiddenTargetChainIds", "allowedTargets", "forbiddenTargets",
+    "maxNativeValueWei", "maxCalldataBytes", "forbiddenSelectors", "forbidContractCreation",
+    "requireZeroNativeValue", "forbidUnlimitedApprovals",
+}
 
 
 class IntentGuard(gl.Contract):
@@ -33,7 +39,7 @@ class IntentGuard(gl.Contract):
             raise gl.vm.UserError("INTENT deploys only on GenLayer Studionet chain 61999")
         self.deployer = gl.message.sender_address
         self.expected_chain_id = u64(STUDIONET_CHAIN_ID)
-        self.contract_version = "1.1.0"
+        self.contract_version = "1.2.0"
 
     def _require_studionet(self) -> None:
         if gl.message.chain_id != u256(STUDIONET_CHAIN_ID):
@@ -86,6 +92,62 @@ class IntentGuard(gl.Contract):
         if not isinstance(parsed, dict):
             raise gl.vm.UserError(name + " must be a JSON object")
 
+    def _canonical_hard_rules(self, raw: str) -> str:
+        self._validate_json_object(raw, "hard_rules_json", MAX_HARD_RULES_JSON)
+        parsed = json.loads(raw)
+        for key in parsed.keys():
+            if key not in HARD_RULE_KEYS:
+                raise gl.vm.UserError("hard_rules_json contains an unsupported rule")
+        for key in ["allowedTargetChainIds", "forbiddenTargetChainIds"]:
+            if key in parsed:
+                values = parsed[key]
+                if not isinstance(values, list) or len(values) > 64 or any(not isinstance(value, int) or value <= 0 for value in values):
+                    raise gl.vm.UserError("hard_rules_json contains an invalid chain rule")
+        for key in ["allowedTargets", "forbiddenTargets"]:
+            if key in parsed:
+                values = parsed[key]
+                if not isinstance(values, list) or len(values) > 64 or any(not isinstance(value, str) or len(value) != 42 or not value.startswith("0x") for value in values):
+                    raise gl.vm.UserError("hard_rules_json contains an invalid address rule")
+        if "forbiddenSelectors" in parsed:
+            values = parsed["forbiddenSelectors"]
+            if not isinstance(values, list) or len(values) > 64 or any(not isinstance(value, str) or len(value) != 10 or not value.startswith("0x") for value in values):
+                raise gl.vm.UserError("hard_rules_json contains an invalid selector rule")
+        if "maxNativeValueWei" in parsed and (not isinstance(parsed["maxNativeValueWei"], str) or not parsed["maxNativeValueWei"].isdigit()):
+            raise gl.vm.UserError("hard_rules_json contains an invalid native value limit")
+        if "maxCalldataBytes" in parsed and (not isinstance(parsed["maxCalldataBytes"], int) or parsed["maxCalldataBytes"] < 0 or parsed["maxCalldataBytes"] > MAX_ACTION_JSON):
+            raise gl.vm.UserError("hard_rules_json contains an invalid calldata limit")
+        for key in ["forbidContractCreation", "requireZeroNativeValue", "forbidUnlimitedApprovals"]:
+            if key in parsed and not isinstance(parsed[key], bool):
+                raise gl.vm.UserError("hard_rules_json contains an invalid boolean rule")
+        return json.dumps(parsed, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    def _enforce_hard_rules(self, action: typing.Any, rules: typing.Any) -> None:
+        target_chain = int(action.get("targetChainId", -1))
+        target = action.get("to")
+        data = str(action.get("data", "0x"))
+        value = int(str(action.get("valueWei", "0")))
+        selector = data[:10].lower() if len(data) >= 10 else "0x"
+        if rules.get("allowedTargetChainIds") and target_chain not in rules["allowedTargetChainIds"]:
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if target_chain in rules.get("forbiddenTargetChainIds", []):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if rules.get("forbidContractCreation") and (target is None or target == ""):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if "maxCalldataBytes" in rules and max(0, (len(data) - 2) // 2) > int(rules["maxCalldataBytes"]):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if rules.get("requireZeroNativeValue") and value != 0:
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if "maxNativeValueWei" in rules and value > int(rules["maxNativeValueWei"]):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if rules.get("allowedTargets") and (not isinstance(target, str) or target.lower() not in [str(x).lower() for x in rules["allowedTargets"]]):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if isinstance(target, str) and target.lower() in [str(x).lower() for x in rules.get("forbiddenTargets", [])]:
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if selector in [str(x).lower() for x in rules.get("forbiddenSelectors", [])]:
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+        if rules.get("forbidUnlimitedApprovals") and selector == "0x095ea7b3" and len(data) >= 138 and int(data[-64:], 16) == (2 ** 256 - 1):
+            raise gl.vm.UserError("action violates the on-chain hard-rule policy")
+
     def _load_intent(self, owner_hex: str, intent_id: str, revision: u32) -> typing.Any:
         key = self._revision_key(owner_hex, intent_id, revision)
         raw = self.intents.get(key, "")
@@ -94,11 +156,12 @@ class IntentGuard(gl.Contract):
         return json.loads(raw)
 
     @gl.public.write
-    def create_intent(self, intent_id: str, statement: str, scope_json: str, expires_at_unix: u64) -> None:
+    def create_intent(self, intent_id: str, statement: str, scope_json: str, hard_rules_json: str, expires_at_unix: u64) -> None:
         self._require_studionet()
         self._validate_intent_id(intent_id)
         self._require_text(statement, "statement", 16, MAX_STATEMENT)
         self._validate_json_object(scope_json, "scope_json", MAX_SCOPE_JSON)
+        hard_rules_canonical = self._canonical_hard_rules(hard_rules_json)
 
         owner = self._owner_hex()
         family = self._family_key(owner, intent_id)
@@ -116,6 +179,7 @@ class IntentGuard(gl.Contract):
             "revision": 1,
             "statement": statement,
             "scope": json.loads(scope_json),
+            "hard_rules": json.loads(hard_rules_canonical),
             "expires_at_unix": int(expires_at_unix),
             "created_at": self._now_iso(),
         }
@@ -128,11 +192,12 @@ class IntentGuard(gl.Contract):
         self.owner_intents[gl.message.sender_address].append(intent_id)
 
     @gl.public.write
-    def revise_intent(self, intent_id: str, statement: str, scope_json: str, expires_at_unix: u64) -> None:
+    def revise_intent(self, intent_id: str, statement: str, scope_json: str, hard_rules_json: str, expires_at_unix: u64) -> None:
         self._require_studionet()
         self._validate_intent_id(intent_id)
         self._require_text(statement, "statement", 16, MAX_STATEMENT)
         self._validate_json_object(scope_json, "scope_json", MAX_SCOPE_JSON)
+        hard_rules_canonical = self._canonical_hard_rules(hard_rules_json)
 
         owner = self._owner_hex()
         family = self._family_key(owner, intent_id)
@@ -153,6 +218,7 @@ class IntentGuard(gl.Contract):
             "revision": int(next_revision),
             "statement": statement,
             "scope": json.loads(scope_json),
+            "hard_rules": json.loads(hard_rules_canonical),
             "expires_at_unix": int(expires_at_unix),
             "created_at": self._now_iso(),
         }
@@ -222,6 +288,7 @@ class IntentGuard(gl.Contract):
         computed_action_id = hashlib.sha256(action_canonical.encode("utf-8")).hexdigest()
         if computed_action_id.lower() != action_id.lower():
             raise gl.vm.UserError("action_id does not match canonical action_json")
+        self._enforce_hard_rules(json.loads(action_canonical), intent.get("hard_rules", {}))
         checks_canonical = json.dumps(json.loads(deterministic_checks_json), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
         def classify() -> typing.Any:
@@ -468,4 +535,3 @@ Return JSON only:
     @gl.public.view
     def list_my_action_ids_page(self, offset: u32, limit: u32) -> typing.Any:
         return self._action_ids_page(gl.message.sender_address, offset, limit)
-

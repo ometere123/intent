@@ -123,15 +123,17 @@ test('account change during adjudication aborts after chain restoration', async 
   assert.equal(base.calls.filter((x) => x.method === 'eth_sendTransaction').length, 0);
 });
 
-test('transaction mutation during adjudication aborts', async () => {
+test('transaction mutation during adjudication cannot change the isolated request', async () => {
   const base = provider({ chainId: 8453 });
   const tx = { from: addr('a'), to: addr('b'), value: '0x0', data: '0xabcdef01' };
   const guarded = new IntentGuardProvider(base, {
     resolveIntent: async () => intent(),
     evaluator: { evaluate: async ({ actionId }) => { base.setChain(61999); tx.to = addr('c'); return matching(actionId); } },
   });
-  await assert.rejects(() => guarded.request({ method: 'eth_sendTransaction', params: [tx] }), /Target transaction changed/);
-  assert.equal(base.calls.filter((x) => x.method === 'eth_sendTransaction').length, 0);
+  await guarded.request({ method: 'eth_sendTransaction', params: [tx] });
+  const mutationSends = base.calls.filter((x) => x.method === 'eth_sendTransaction');
+  assert.equal(mutationSends.length, 1);
+  assert.equal(mutationSends[0].params[0].to, addr('b'));
 });
 
 test('forwards exact transaction after favourable bound decision', async () => {
@@ -148,7 +150,7 @@ test('forwards exact transaction after favourable bound decision', async () => {
   assert.equal(base.getChain(), 8453);
   const sends = base.calls.filter((x) => x.method === 'eth_sendTransaction');
   assert.equal(sends.length, 1);
-  assert.deepEqual(sends[0].params, [tx]);
+  assert.deepEqual(sends[0].params, [{ from: addr('a'), to: addr('b'), value: '0x0', data: '0xabcdef01' }]);
 });
 
 test('non-send provider methods pass through untouched', async () => {
@@ -190,15 +192,35 @@ test('adjudication error restores target chain before failing closed', async () 
   assert.equal(base.getChain(), 8453);
 });
 
-test('gas or fee mutation changes the action binding and aborts', async () => {
+test('gas or fee mutation after capture cannot change the forwarded request', async () => {
   const base = provider({ chainId: 8453 });
   const tx = { from:addr('a'), to:addr('b'), data:'0xabcdef01', maxFeePerGas:'0x10' };
   const guarded = new IntentGuardProvider(base, {
     resolveIntent: async () => intent(),
     evaluator: { evaluate: async ({ actionId }) => { base.setChain(61999); tx.maxFeePerGas='0xffff'; return matching(actionId); } },
   });
-  await assert.rejects(() => guarded.request({ method:'eth_sendTransaction', params:[tx] }), /Target transaction changed/);
-  assert.equal(base.calls.filter((x)=>x.method==='eth_sendTransaction').length,0);
+  await guarded.request({ method:'eth_sendTransaction', params:[tx] });
+  const feeSends = base.calls.filter((x)=>x.method==='eth_sendTransaction');
+  assert.equal(feeSends.length, 1);
+  assert.equal(feeSends[0].params[0].maxFeePerGas, '0x10');
+});
+
+test('getter and queued microtask mutations cannot alter the snapshot', async () => {
+  const base = provider({ chainId: 8453 });
+  let currentTo = addr('b');
+  const tx = {
+    from: addr('a'),
+    get to() { const value = currentTo; currentTo = addr('c'); return value; },
+    data: '0xabcdef01',
+    memo: { value: 'original' },
+  };
+  const guarded = new IntentGuardProvider(base, {
+    resolveIntent: async () => intent(),
+    evaluator: { evaluate: async ({ actionId }) => { base.setChain(61999); queueMicrotask(() => { tx.memo.value = 'changed'; }); return matching(actionId); } },
+  });
+  await guarded.request({ method: 'eth_sendTransaction', params: [tx] });
+  const send = base.calls.find((call) => call.method === 'eth_sendTransaction');
+  assert.deepEqual(send?.params, [{ from: addr('a'), to: addr('b'), data: '0xabcdef01', memo: { value: 'original' } }]);
 });
 
 test('standard ERC20 transfer is decoded deterministically without trusting an ABI label', async () => {

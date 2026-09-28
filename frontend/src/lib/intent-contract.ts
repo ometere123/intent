@@ -1,7 +1,7 @@
 import { createClient } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
-import { ExecutionResult } from 'genlayer-js/types';
 import type { EIP1193Provider, HardRules, IntentDefinition } from '@intent/wallet-guard';
+import { requireFinalizedExecutionSuccess } from './genlayer-finality';
 
 const CONTRACT = process.env.NEXT_PUBLIC_INTENT_CONTRACT_ADDRESS as `0x${string}` | undefined;
 const STUDIONET_HEX = '0xf22f';
@@ -39,7 +39,6 @@ async function connectedWrite(provider: EIP1193Provider) {
   if (!accounts?.[0] || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0])) throw new Error('No valid wallet account connected.');
   const account = accounts[0] as `0x${string}`;
   const client = createClient({ chain: studionet, account, provider: provider as never });
-  await client.connect('studionet');
   return { client, account, contract };
 }
 
@@ -56,9 +55,7 @@ async function write(provider: EIP1193Provider, functionName: string, args: unkn
       value: BigInt(0),
     } as never);
     const receipt = await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' } as never);
-    if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
-      throw new Error(`GenLayer write failed: ${String(receipt.txExecutionResultName)}`);
-    }
+    requireFinalizedExecutionSuccess(receipt);
     return hash;
   } finally {
     if (Number.isSafeInteger(originalChain) && originalChain > 0 && originalChain !== EXPECTED_CHAIN) {
@@ -72,12 +69,12 @@ async function write(provider: EIP1193Provider, functionName: string, args: unkn
   }
 }
 
-export async function createIntent(provider: EIP1193Provider, input: { id: string; statement: string; scope: Record<string, unknown>; expiresAtUnix: number }) {
-  return write(provider, 'create_intent', [input.id, input.statement, JSON.stringify(input.scope), input.expiresAtUnix]);
+export async function createIntent(provider: EIP1193Provider, input: { id: string; statement: string; scope: Record<string, unknown>; hardRules?: HardRules; expiresAtUnix: number }) {
+  return write(provider, 'create_intent', [input.id, input.statement, JSON.stringify(input.scope), JSON.stringify(input.hardRules ?? {}), input.expiresAtUnix]);
 }
 
-export async function reviseIntent(provider: EIP1193Provider, input: { id: string; statement: string; scope: Record<string, unknown>; expiresAtUnix: number }) {
-  return write(provider, 'revise_intent', [input.id, input.statement, JSON.stringify(input.scope), input.expiresAtUnix]);
+export async function reviseIntent(provider: EIP1193Provider, input: { id: string; statement: string; scope: Record<string, unknown>; hardRules?: HardRules; expiresAtUnix: number }) {
+  return write(provider, 'revise_intent', [input.id, input.statement, JSON.stringify(input.scope), JSON.stringify(input.hardRules ?? {}), input.expiresAtUnix]);
 }
 
 export async function revokeIntent(provider: EIP1193Provider, id: string) {
@@ -165,17 +162,39 @@ export async function listRecentActionIds(owner: string, totalCount: number, max
   return output;
 }
 
+function tightenRules(onChain: HardRules, extra?: HardRules): HardRules {
+  if (!extra) return onChain;
+  const intersection = <T>(a?: T[], b?: T[]) => a && b ? a.filter((value) => b.includes(value)) : (a ?? b);
+  const union = <T>(a?: T[], b?: T[]) => Array.from(new Set([...(a ?? []), ...(b ?? [])]));
+  const output: HardRules = {
+    allowedTargetChainIds: intersection(onChain.allowedTargetChainIds, extra.allowedTargetChainIds),
+    forbiddenTargetChainIds: union(onChain.forbiddenTargetChainIds, extra.forbiddenTargetChainIds),
+    allowedTargets: intersection(onChain.allowedTargets, extra.allowedTargets),
+    forbiddenTargets: union(onChain.forbiddenTargets, extra.forbiddenTargets),
+    forbiddenSelectors: union(onChain.forbiddenSelectors, extra.forbiddenSelectors),
+    forbidContractCreation: Boolean(onChain.forbidContractCreation || extra.forbidContractCreation),
+    requireZeroNativeValue: Boolean(onChain.requireZeroNativeValue || extra.requireZeroNativeValue),
+    forbidUnlimitedApprovals: Boolean(onChain.forbidUnlimitedApprovals || extra.forbidUnlimitedApprovals),
+  };
+  const limits = [onChain.maxCalldataBytes, extra.maxCalldataBytes].filter((value): value is number => value !== undefined);
+  if (limits.length) output.maxCalldataBytes = Math.min(...limits);
+  const native = [onChain.maxNativeValueWei, extra.maxNativeValueWei].filter((value): value is string => value !== undefined);
+  if (native.length) output.maxNativeValueWei = native.reduce((a, b) => BigInt(a) < BigInt(b) ? a : b);
+  return Object.fromEntries(Object.entries(output).filter(([, value]) => value !== undefined && (!Array.isArray(value) || value.length > 0))) as HardRules;
+}
+
 export async function resolveLatestIntent(owner: string, id: string, hardRules?: HardRules): Promise<IntentDefinition> {
   const latest = Number(await getLatestRevision(owner, id));
   if (!Number.isSafeInteger(latest) || latest < 1) throw new Error(`Intent ${id} was not found for ${owner}.`);
   if (Boolean(await isRevoked(owner, id))) throw new Error(`Intent ${id} is revoked.`);
   const raw = await getIntent(owner, id, latest);
   if (typeof raw !== 'string' || !raw) throw new Error(`Intent ${id} revision ${latest} could not be read.`);
-  const record = JSON.parse(raw) as { statement?: unknown; expires_at_unix?: unknown };
+  const record = JSON.parse(raw) as { statement?: unknown; expires_at_unix?: unknown; hard_rules?: unknown };
   if (typeof record.statement !== 'string' || !record.statement) throw new Error('On-chain intent statement is invalid.');
   const expiry = Number(record.expires_at_unix ?? 0);
   if (expiry && Date.now() >= expiry * 1000) throw new Error(`Intent ${id} is expired.`);
-  return { id, revision: latest, statement: record.statement, hardRules };
+  const onChainRules = (record.hard_rules && typeof record.hard_rules === 'object' ? record.hard_rules : {}) as HardRules;
+  return { id, revision: latest, statement: record.statement, hardRules: tightenRules(onChainRules, hardRules) };
 }
 
 export function configuredContractAddress() {

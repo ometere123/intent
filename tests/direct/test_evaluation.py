@@ -26,6 +26,7 @@ def setup(direct_vm, direct_deploy, direct_alice):
         "cloud-pro",
         "Purchase one annual cloud subscription within the declared budget and no unrelated transfer.",
         '{"purpose":"cloud subscription","max_amount":"200"}',
+        "{}",
         0,
     )
     return contract
@@ -77,6 +78,25 @@ def test_receipt_only_for_positive_decision(direct_vm, direct_deploy, direct_ali
         contract.record_execution_receipt(ACTION_ID, 8453, "0x" + "9" * 64)
 
 
+def test_on_chain_hard_rule_cannot_be_weakened_by_evaluation_input(direct_vm, direct_deploy, direct_alice):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy(CONTRACT)
+    contract.create_intent(
+        "bounded-cloud",
+        "Purchase one annual cloud subscription with no unrelated transfer or excess value.",
+        "{}",
+        '{"maxNativeValueWei":"1"}',
+        0,
+    )
+    mock_decision(direct_vm)
+    action = json.loads(ACTION_JSON)
+    action["valueWei"] = "2"
+    changed = json.dumps(action)
+    changed_id = hashlib.sha256(json.dumps(action, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    with direct_vm.expect_revert("action violates the on-chain hard-rule policy"):
+        contract.evaluate("bounded-cloud", 1, changed_id, changed, "Cloud purchase.", CHECKS_JSON)
+
+
 def test_positive_decision_accepts_single_execution_receipt(direct_vm, direct_deploy, direct_alice):
     contract = setup(direct_vm, direct_deploy, direct_alice)
     mock_decision(direct_vm)
@@ -96,6 +116,7 @@ def test_old_revision_cannot_authorize_new_action(direct_vm, direct_deploy, dire
         "cloud-pro",
         "Purchase one annual cloud subscription up to 150 USDC and no unrelated transfer.",
         '{"purpose":"cloud subscription","max_amount":"150"}',
+        "{}",
         0,
     )
     mock_decision(direct_vm)
@@ -141,6 +162,7 @@ def test_intent_expires_at_the_exact_declared_second(direct_vm, direct_deploy, d
         "expiring-cloud",
         "Purchase one annual cloud subscription within the declared budget and no unrelated transfer.",
         '{"purpose":"cloud subscription"}',
+        "{}",
         expires,
     )
     direct_vm.warp("2026-01-01T00:01:00Z")

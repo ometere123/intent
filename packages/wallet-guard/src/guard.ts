@@ -16,11 +16,49 @@ export class IntentGuardError extends Error {
   }
 }
 
+function cloneTransactionValue(value: unknown, seen: WeakSet<object>, path: string): unknown {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean' || typeof value === 'bigint') return value;
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value)) throw new IntentGuardError('INTENT_BAD_TRANSACTION', `${path} must be a safe integer.`);
+    return value;
+  }
+  if (value === undefined) return undefined;
+  if (typeof value !== 'object') throw new IntentGuardError('INTENT_BAD_TRANSACTION', `${path} has an unsupported value type.`);
+  if (seen.has(value)) throw new IntentGuardError('INTENT_BAD_TRANSACTION', `${path} contains a cyclic value.`);
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) return value.map((item, index) => cloneTransactionValue(item, seen, `${path}[${index}]`));
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) {
+      throw new IntentGuardError('INTENT_BAD_TRANSACTION', `${path} must contain plain JSON-like objects only.`);
+    }
+    const output: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>)) {
+      let descriptor: PropertyDescriptor | undefined;
+      try { descriptor = Object.getOwnPropertyDescriptor(value, key); } catch {
+        throw new IntentGuardError('INTENT_BAD_TRANSACTION', `Unable to snapshot ${path}.${key}.`);
+      }
+      if (descriptor?.set && !descriptor.get) {
+        throw new IntentGuardError('INTENT_BAD_TRANSACTION', `${path}.${key} is not readable.`);
+      }
+      let child: unknown;
+      try { child = (value as Record<string, unknown>)[key]; } catch {
+        throw new IntentGuardError('INTENT_BAD_TRANSACTION', `Unable to read ${path}.${key}.`);
+      }
+      const copied = cloneTransactionValue(child, seen, `${path}.${key}`);
+      if (copied !== undefined) output[key] = copied;
+    }
+    return output;
+  } finally {
+    seen.delete(value);
+  }
+}
+
 function asTx(args: EIP1193RequestArguments): WalletTransaction {
   if (!Array.isArray(args.params) || args.params.length !== 1 || typeof args.params[0] !== 'object' || args.params[0] === null) {
     throw new IntentGuardError('INTENT_BAD_TRANSACTION', 'eth_sendTransaction requires exactly one transaction object.');
   }
-  return args.params[0] as WalletTransaction;
+  return cloneTransactionValue(args.params[0], new WeakSet<object>(), 'transaction') as WalletTransaction;
 }
 
 function parseChainId(value: unknown): number {
@@ -174,7 +212,10 @@ export class IntentGuardProvider implements EIP1193Provider {
     }
 
     this.emit({ type: 'forwarding', detail: { actionId: id } });
-    const targetTxHash = await this.base.request(args);
+    // Forward only the synchronous isolated snapshot. The caller-owned request
+    // object is never retained across adjudication and can no longer mutate
+    // what the wallet receives.
+    const targetTxHash = await this.base.request({ method: 'eth_sendTransaction', params: [tx] });
 
     if (typeof targetTxHash === 'string' && this.options.evaluator.recordExecutionReceipt) {
       try {

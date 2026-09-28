@@ -2,7 +2,7 @@
 
 **Semantic transaction authorisation for wallets and autonomous agents, adjudicated on GenLayer Studionet (chain ID 61999).**
 
-INTENT turns a human-written mandate into an enforceable wallet guard. A dapp or agent proposes a transaction, deterministic checks reject obvious violations locally, and only ambiguous cases are sent to GenLayer validators. The wrapped EIP-1193 provider forwards the original transaction only after a finalized, successfully executed GenLayer decision is `MATCHES_INTENT`.
+INTENT turns a human-written mandate into a fail-closed wallet guard. A dapp or agent proposes a transaction, deterministic checks reject obvious violations locally, and only ambiguous cases are sent to GenLayer validators. Compatibility Mode forwards only an isolated transaction snapshot after a finalized, successfully executed GenLayer decision is `MATCHES_INTENT`.
 
 > Network rule: every GenLayer deployment and write in this repository targets **Studionet 61999** (`https://studio.genlayer.com/api`). Studio Dev / 61997 is intentionally unsupported.
 
@@ -13,11 +13,12 @@ INTENT turns a human-written mandate into an enforceable wallet guard. A dapp or
 - `frontend/` — Next.js App Router control plane for creating mandates, inspecting decisions, testing transactions and generating integration snippets.
 - `tests/` — GenLayer Direct Mode contract tests, cross-language action-hash parity checks, an integration checklist and executable SDK security tests.
 - `scripts/` — Studionet-only deployment/network guards.
+- `protected-account/` — Sepolia target-chain registry and Safe Guard for exact one-time, threshold-attested protected-account authorizations.
 - threat model, demo script and reviewer evidence documents.
 
 ## Core trust boundary
 
-INTENT does **not** claim that GenLayer can magically observe a transaction after a malicious wallet module changes it. The guard binds consensus to a canonical action object containing the complete EIP-1193 transaction request, including caller-supplied gas/fee/nonce and extension fields, and rechecks that exact request immediately before forwarding it. The browser wallet itself remains a trusted signer boundary and may populate omitted transport fields such as nonce or fees. The contract independently recomputes the SHA-256 action ID from the canonical JSON. Integrators must ensure the guarded provider is the only provider exposed to the protected action path.
+Compatibility Mode is application-level fail-closed enforcement, not cryptographic wallet-level enforcement. The guard synchronously snapshots and recursively isolates the complete EIP-1193 transaction request, including caller-supplied gas/fee/nonce and extension fields, before any asynchronous callback. It adjudicates and forwards only that isolated snapshot. The browser wallet remains a trusted signer boundary and may populate omitted transport fields. Integrators must ensure the guarded provider is the only provider exposed to the protected action path.
 
 GenLayer decides only the semantic question:
 
@@ -64,6 +65,22 @@ base EIP-1193 provider -> target transaction
     v
 optional execution receipt anchored back to INTENT
 ```
+
+## Protected Account Mode
+
+For stronger enforcement, assets are held by a Safe on Ethereum Sepolia rather
+than an ordinary EOA. A finalized successful `MATCHES_INTENT` decision is converted
+by a threshold of attestors into an EIP-712 certificate admitted to
+`IntentAuthorizationRegistry`. `IntentSafeGuard` binds the exact Safe, Sepolia
+chain, Safe nonce, recipient, value, calldata hash and operation, and rejects any
+mutation or replay. Successful execution consumes the one-time authorization.
+
+This is threshold-attested finalized GenLayer authorization, not a trustless
+cross-chain proof. The registry/attestor configuration is an explicit trust
+assumption, and Safe modules must remain disabled or receive equivalent protection.
+The repository contains the target-chain contracts and focused Solidity tests;
+Sepolia deployment and live Safe evidence must be recorded separately and are not
+represented as complete merely because the contracts compile.
 
 ## Example mandate
 
@@ -156,7 +173,7 @@ await guarded.request({
 
 1. Studionet is a hosted development environment. INTENT is production-shaped, but 61999 itself is not presented here as a production settlement network.
 2. The semantic decision is only as good as the evidence given to validators. The canonical transaction payload is authoritative; descriptive summaries are explicitly treated as untrusted supporting material.
-3. The guard serialises protected sends, restores and verifies the original target chain after GenLayer adjudication, and aborts if chain, account, request fields or action hash differ.
+3. The guard serialises protected sends, restores and verifies the original target chain after GenLayer adjudication, and forwards only the isolated request snapshot whose action ID was adjudicated.
 4. Never expose a raw provider alongside the guarded provider for an action path you claim is protected.
 5. Do not put wallet private keys, seed phrases or server signers in frontend code.
 

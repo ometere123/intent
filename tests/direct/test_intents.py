@@ -33,6 +33,7 @@ def test_create_intent_and_read_revision(direct_vm, direct_deploy, direct_alice)
         "cloud-pro",
         "Purchase one annual cloud plan and never grant unlimited token approval.",
         '{"purpose":"cloud subscription","max_amount":"200"}',
+        "{}",
         0,
     )
     assert int(contract.get_latest_revision(owner, "cloud-pro")) == 1
@@ -43,12 +44,28 @@ def test_create_intent_and_read_revision(direct_vm, direct_deploy, direct_alice)
     assert contract.is_revoked(owner, "cloud-pro") is False
 
 
+def test_hard_rules_are_frozen_on_chain(direct_vm, direct_deploy, direct_alice):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    owner = as_hex(direct_alice)
+    contract.create_intent(
+        "bounded-cloud",
+        "Purchase one annual cloud plan only from the declared target without unrelated authority.",
+        "{}",
+        '{"allowedTargetChainIds":[8453],"forbidUnlimitedApprovals":true,"maxNativeValueWei":"10"}',
+        0,
+    )
+    record = json.loads(contract.get_intent(owner, "bounded-cloud", 1))
+    assert record["hard_rules"]["allowedTargetChainIds"] == [8453]
+    assert record["hard_rules"]["forbidUnlimitedApprovals"] is True
+    assert record["hard_rules"]["maxNativeValueWei"] == "10"
+
+
 def test_duplicate_intent_id_reverts(direct_vm, direct_deploy, direct_alice):
     contract = deploy(direct_vm, direct_deploy, direct_alice)
     statement = "Purchase one annual cloud plan and never grant unlimited token approval."
-    contract.create_intent("cloud-pro", statement, "{}", 0)
+    contract.create_intent("cloud-pro", statement, "{}", "{}", 0)
     with direct_vm.expect_revert("intent_id already exists for this owner"):
-        contract.create_intent("cloud-pro", statement, "{}", 0)
+        contract.create_intent("cloud-pro", statement, "{}", "{}", 0)
 
 
 def test_revision_is_immutable_and_latest_advances(direct_vm, direct_deploy, direct_alice):
@@ -56,8 +73,8 @@ def test_revision_is_immutable_and_latest_advances(direct_vm, direct_deploy, dir
     owner = as_hex(direct_alice)
     v1 = "Purchase one annual cloud plan with a maximum declared price of 200 USDC."
     v2 = "Purchase one annual cloud plan with a maximum declared price of 150 USDC."
-    contract.create_intent("cloud-pro", v1, '{"max":"200"}', 0)
-    contract.revise_intent("cloud-pro", v2, '{"max":"150"}', 0)
+    contract.create_intent("cloud-pro", v1, '{"max":"200"}', "{}", 0)
+    contract.revise_intent("cloud-pro", v2, '{"max":"150"}', "{}", 0)
     assert int(contract.get_latest_revision(owner, "cloud-pro")) == 2
     assert json.loads(contract.get_intent(owner, "cloud-pro", 1))["statement"] == v1
     assert json.loads(contract.get_intent(owner, "cloud-pro", 2))["statement"] == v2
@@ -67,9 +84,9 @@ def test_owner_namespaces_are_independent(direct_vm, direct_deploy, direct_alice
     contract = deploy(direct_vm, direct_deploy, direct_alice)
     statement = "Purchase one annual cloud plan with no unrelated authority or recurring approval."
     direct_vm.sender = direct_alice
-    contract.create_intent("shared-name", statement, '{"owner":"alice"}', 0)
+    contract.create_intent("shared-name", statement, '{"owner":"alice"}', "{}", 0)
     direct_vm.sender = direct_bob
-    contract.create_intent("shared-name", statement, '{"owner":"bob"}', 0)
+    contract.create_intent("shared-name", statement, '{"owner":"bob"}', "{}", 0)
     assert int(contract.get_latest_revision(as_hex(direct_alice), "shared-name")) == 1
     assert int(contract.get_latest_revision(as_hex(direct_bob), "shared-name")) == 1
 
@@ -77,11 +94,11 @@ def test_owner_namespaces_are_independent(direct_vm, direct_deploy, direct_alice
 def test_revoke_blocks_future_revision(direct_vm, direct_deploy, direct_alice):
     contract = deploy(direct_vm, direct_deploy, direct_alice)
     statement = "Purchase one annual cloud plan with no unrelated authority or recurring approval."
-    contract.create_intent("cloud-pro", statement, "{}", 0)
+    contract.create_intent("cloud-pro", statement, "{}", "{}", 0)
     contract.revoke_intent("cloud-pro")
     assert contract.is_revoked(as_hex(direct_alice), "cloud-pro") is True
     with direct_vm.expect_revert("revoked intent cannot be revised"):
-        contract.revise_intent("cloud-pro", statement + " Revised.", "{}", 0)
+        contract.revise_intent("cloud-pro", statement + " Revised.", "{}", "{}", 0)
 
 
 def test_write_refuses_wrong_chain_after_deploy(direct_vm, direct_deploy, direct_alice):
@@ -91,6 +108,7 @@ def test_write_refuses_wrong_chain_after_deploy(direct_vm, direct_deploy, direct
         contract.create_intent(
             "cloud-pro",
             "Purchase one annual cloud plan with no unrelated authority or recurring approval.",
+            "{}",
             "{}",
             0,
         )
@@ -103,6 +121,7 @@ def test_intent_id_rejects_key_separator_characters(direct_vm, direct_deploy, di
             "bad|id",
             "Purchase one annual cloud plan with no unrelated authority or recurring approval.",
             "{}",
+            "{}",
             0,
         )
 
@@ -113,6 +132,7 @@ def test_revocation_has_audit_record(direct_vm, direct_deploy, direct_alice):
     contract.create_intent(
         "cloud-pro",
         "Purchase one annual cloud plan with no unrelated authority or recurring approval.",
+        "{}",
         "{}",
         0,
     )
@@ -128,7 +148,7 @@ def test_owner_pagination_and_counts(direct_vm, direct_deploy, direct_alice):
     owner = as_hex(direct_alice)
     statement = "Purchase one annual cloud plan with no unrelated authority or recurring approval."
     for suffix in ["a", "b", "c"]:
-        contract.create_intent(f"cloud-{suffix}", statement, "{}", 0)
+        contract.create_intent(f"cloud-{suffix}", statement, "{}", "{}", 0)
     counts = contract.get_owner_counts(owner)
     assert counts["intent_count"] == 3
     assert contract.list_intent_ids_page(owner, 0, 2) == ["cloud-a", "cloud-b"]

@@ -48,7 +48,7 @@
 
 ### Raw provider bypass
 
-**Control:** architectural, not cryptographic. Protected code must receive only the guarded provider. If the same application exposes `window.ethereum` directly to arbitrary code, that code can bypass INTENT.
+**Control:** Compatibility Mode is application-level fail-closed enforcement, not cryptographic wallet enforcement. Protected code must receive only the guarded provider. If the same application exposes `window.ethereum` directly to arbitrary code, that code can bypass INTENT. Protected Account Mode is the separate target-chain enforcement path under `protected-account/`; its Safe must keep all module execution paths disabled or separately guarded.
 
 ### Compromised frontend
 
@@ -107,4 +107,15 @@ INTENT does not claim to:
 
 ### Optimistic decision used before finality
 
-**Control:** wallet-facing writes wait for GenLayer finality and verify `FINISHED_WITH_RETURN` before a decision is consumed. INTENT does not release a target transaction on a merely proposed or non-final decision.
+**Control:** wallet-facing writes use the shared lifecycle verifier and require `FINALIZED` plus `FINISHED_WITH_RETURN` before a decision is consumed. `ACCEPTED` and `FINALIZED` without successful execution are not authorization. Target transaction hashes are submission/anchor metadata unless an independent target-chain receipt verifier is used; they are not execution proof by themselves.
+
+### Protected Account Mode trust boundary
+
+The Sepolia registry accepts EIP-712 certificates from a configured threshold of
+attestors who independently inspect finalized Studionet 61999 decisions. This is
+threshold-attested finalized GenLayer authorization, not a trustless cross-chain
+light client. The Safe Guard binds one exact Safe action (chain, Safe, nonce,
+recipient, value, calldata hash and operation) and consumes the authorization after
+successful execution. Safe modules remain a separate execution path: the protected
+deployment must keep the module set empty unless every enabled module is explicitly
+covered by equivalent enforcement. Guard removal is delayed and observable.

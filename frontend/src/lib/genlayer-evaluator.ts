@@ -1,7 +1,7 @@
 import { createClient } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
-import { ExecutionResult } from 'genlayer-js/types';
 import type { IntentEvaluator, IntentEvaluatorInput, IntentDecision, EIP1193Provider } from '@intent/wallet-guard';
+import { requireFinalizedExecutionSuccess } from './genlayer-finality';
 
 const EXPECTED_CHAIN = 61999;
 const STUDIONET_HEX = '0xf22f';
@@ -56,11 +56,10 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
       await switchToStudionet();
       const owner=await account();
       const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
-      await client.connect('studionet');
       const write={address:contractAddress,functionName:'evaluate',args:[input.intent.id,input.intent.revision,input.actionId,actionJson,input.decodedSummary,checksJson]};
       const txHash=await client.writeContract({...write,value:BigInt(0)} as never);
       const receipt=await client.waitForTransactionReceipt({hash:txHash,status:'FINALIZED'} as never);
-      if(receipt.txExecutionResultName!==ExecutionResult.FINISHED_WITH_RETURN) throw new Error(`INTENT adjudication execution failed: ${String(receipt.txExecutionResultName)}`);
+      requireFinalizedExecutionSuccess(receipt);
       const raw=await client.readContract({address:contractAddress,functionName:'get_decision',args:[owner,input.actionId],stateStatus:'finalized'} as never);
       const decision=parseDecision(raw);
       return {...decision,genLayerTxHash:txHash};
@@ -73,11 +72,10 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
         await switchToStudionet();
         const owner=await account();
         const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
-        await client.connect('studionet');
         const write={address:contractAddress,functionName:'record_execution_receipt',args:[decision.actionId,targetChainId,targetTxHash]};
         const receiptTx=await client.writeContract({...write,value:BigInt(0)} as never);
         const receipt=await client.waitForTransactionReceipt({hash:receiptTx,status:'FINALIZED'} as never);
-        if(receipt.txExecutionResultName!==ExecutionResult.FINISHED_WITH_RETURN) throw new Error(`Receipt anchor execution failed: ${String(receipt.txExecutionResultName)}`);
+        requireFinalizedExecutionSuccess(receipt);
       } finally {
         if(before && before!==EXPECTED_CHAIN){
           await genLayerProvider.request({method:'wallet_switchEthereumChain',params:[{chainId:`0x${before.toString(16)}`}]});

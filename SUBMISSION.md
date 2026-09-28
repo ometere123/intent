@@ -32,7 +32,7 @@ INTENT does not ask one application backend to decide whether an ambiguous trans
 - reviewer-focused Direct Mode, hash-parity and SDK security tests.
 - Protected Account Mode target-chain package under `protected-account/`, with a
   threshold-attested EIP-712 registry and official Safe v1.4.1 Guard for exact
-  one-time actions; 8 Foundry tests exercise a real Safe proxy locally.
+  one-time actions; 10 Foundry tests exercise a real Safe proxy locally.
 
 ## Network
 
@@ -52,8 +52,9 @@ The protocol proves a narrower statement: against one immutable human mandate re
 
 The canonical hard-rule-bound deployment, transaction ID and real validator outcomes
 are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. The same
-evidence file records the separate Ethereum Sepolia Registry, official Safe v1.4.1,
-Guard installation, test-controlled 3-of-5 certificate admission and exact Safe
-execution. The bridge is threshold-attested finalized GenLayer state, not a
-trustless GenLayer light client. A clean current UNCLEAR protected flow remains
-unreproduced and is explicitly not claimed.
+evidence file records the corrected Ethereum Sepolia Registry bound to the policy
+owner and intent-family hash, official Safe v1.4.1, Guard installation,
+test-controlled 3-of-5 certificate admission and exact Safe execution. The bridge
+is threshold-attested finalized GenLayer state, not a trustless GenLayer light
+client. A clean current UNCLEAR protected flow remains unreproduced and is
+explicitly not claimed.

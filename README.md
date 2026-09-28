@@ -85,6 +85,14 @@ are deployed and exercised; addresses and transaction evidence are recorded in
 `LIVE_EVIDENCE.md`. The five attestors are test-controlled keys, not independent
 operators.
 
+The current corrected Sepolia reference deployment is Registry
+`0x6946cf884e54e89a25fde6130cf9d88d7d0e5eef`, Guard
+`0x84308509e7ac6b995bbefa6342761cd2a8fdd451`, and Safe
+`0x2C1688c1eC10020a3919Ce67000fFa91Bf4bd778`. The Registry binds that Safe to the
+canonical GenLayer INTENT policy owner and intent-family hash before admitting a
+certificate. This remains threshold-attested cross-chain authorization, not a
+native trustless GenLayer light client.
+
 ## Example mandate
 
 > Purchase one annual Pro subscription from ExampleCloud for no more than 200 USDC. Do not create a recurring token approval, grant an unlimited approval, or authorise any unrelated transfer.

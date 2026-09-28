@@ -24,9 +24,8 @@ rules; the current contract source and deployment metadata above are canonical.
 
 The following finalized semantic writes were executed against the previous
 `1.1.0` deployment and are retained as historical evidence. They are not claims
-about state on the canonical `1.2.0` deployment above. The new deployment has
-only been post-deployment smoke-checked so far; fresh intent/evaluation lifecycle
-evidence must be collected before presenting it as a protected-account proof.
+about state on the canonical `1.2.0` deployment above. Fresh current protected-
+account evidence is recorded in the corrected Sepolia section below.
 
 The first canonical-1.2.0 smoke attempts are not lifecycle evidence. Transaction
 `0x4805e87e6b537aa18c7fe298d31cdcc8982d63db0ae0c6a6e770cb38dca3e304` used
@@ -77,11 +76,70 @@ No external target-chain transaction was executed during this run, so `record_ex
 - No separate frontend product was added; the existing control plane now includes a
   Protected Account Mode reference page while remaining separate from the contract.
 
-## Protected Account Mode — live Sepolia evidence
+## Protected Account Mode — corrected policy-bound live Sepolia evidence
 
-The following is a real test-controlled Sepolia deployment, separate from GenLayer
-Studionet. It is not a trustless GenLayer light client: the target-chain bridge is
-threshold-attested finalized GenLayer state.
+This is the canonical corrected Sepolia deployment for the current hardening pass.
+The Registry binds each Safe to the GenLayer policy owner and intent-family hash,
+and admission requires those fields in the signed certificate.
+
+- Target network: Ethereum Sepolia, chain ID `11155111`
+- Registry: `0x6946cf884e54e89a25fde6130cf9d88d7d0e5eef`
+  - deployment transaction: [`0x5ecee926be0bc7491107f53ebac24edab191ddb80ae23b6da881d01c391d9bf1`](https://sepolia.etherscan.io/tx/0x5ecee926be0bc7491107f53ebac24edab191ddb80ae23b6da881d01c391d9bf1)
+  - canonical GenLayer INTENT: `0x7b26BC39E2A6aB74A677E558FC53E8b3a3fBe6Bf`
+  - threshold: `3-of-5` test-controlled attestors
+- Safe v1.4.1 singleton: `0x69332b1612f8a4b1b756bd2e3457ba1c89958272`
+- SafeProxyFactory: `0x9f4c37d17d5e6835c6cb835e77e0b60772fd7a44`
+- protected Safe: `0x2C1688c1eC10020a3919Ce67000fFa91Bf4bd778`
+  - owner: `0x02d1cAaaa1C79Be548FD4Fd188dd7f851eCb9910`
+  - threshold: `1`
+  - setup transaction: `0xdae491216098cd3efb0bebcc74cfaabf46084cae959a1c15dbabc2ef4b2b767a`
+- IntentSafeGuard: `0x84308509e7ac6b995bbefa6342761cd2a8fdd451`
+  - deployment transaction: [`0x9db8bf03b209f34017c48244f3934e3e73fa461ca311edb44c4e0eb1e9dbdd0d`](https://sepolia.etherscan.io/tx/0x9db8bf03b209f34017c48244f3934e3e73fa461ca311edb44c4e0eb1e9dbdd0d)
+  - Safe installation transaction: [`0x77ab87b5bdde1976a9c919b4196326364f58af2225d085cb8bf93a6cdf9cad67`](https://sepolia.etherscan.io/tx/0x77ab87b5bdde1976a9c919b4196326364f58af2225d085cb8bf93a6cdf9cad67)
+  - Registry binding transaction: [`0xcdd8059956cbfb361be6ae5f5d65643d89936e7836f508ef31e0856e7753c27c`](https://sepolia.etherscan.io/tx/0xcdd8059956cbfb361be6ae5f5d65643d89936e7836f508ef31e0856e7753c27c)
+- Demo target: `0x9a5e9b87f887764aeeeca3dba53c185a6181be99` (deployed but not used by the bound decision)
+
+Policy binding:
+
+- owner: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`
+- intent family: `protected-demo-9`
+- intent ID hash: `0xa50095f8799fd7ad8c0ccc0d9e87b62de185970b87420aaa21c2e64fc15bfd1a`
+- module baseline: empty before activation; Safe guard storage readback matched the deployed Guard.
+
+### Fresh finalized GenLayer decision and exact Safe execution
+
+- evaluate transaction: [`0x466171198c2bd76f01258bcc274e40d104a945aedc3bb570c4776a8f0704c90e`](https://explorer-studio.genlayer.com/tx/0x466171198c2bd76f01258bcc274e40d104a945aedc3bb570c4776a8f0704c90e)
+- final result: `FINALIZED / MAJORITY_AGREE / SUCCESS`
+- outcome: `MATCHES_INTENT`
+- action ID: `fb661ec7de20e6b0d7cd09446b8bd353201b61cda3fa6eafd0fea164d96f539b`
+- Safe nonce bound: `1`
+- exact Safe transaction hash/action hash: `0x3fbaaf1a0a63fb431162030543e01aac8de715bb75de0aab64f5dd3f162eb878`
+- certificate digest: `0x27d7b31c8d122d1f4e016de2b6b01db169743dcc2ac9350aba8748c0807629c3`
+- Registry admission transaction: [`0x7045364748f759c4664d9900118404dfec742eaa6d7687b3675d43aebf7c1cc9`](https://sepolia.etherscan.io/tx/0x7045364748f759c4664d9900118404dfec742eaa6d7687b3675d43aebf7c1cc9)
+- admission readback: `isAuthorized(actionHash) == true` before execution; signers were attestors 1, 2 and 3.
+- exact Safe execution transaction: [`0x72547bc0ba6c38b6aecd1d60c917b7e2b36a63c8f3c0572f735caa8dff5167eb`](https://sepolia.etherscan.io/tx/0x72547bc0ba6c38b6aecd1d60c917b7e2b36a63c8f3c0572f735caa8dff5167eb)
+- execution receipt: `success`; target state: `pingCount=2`, payload `0x...03`, caller is the protected Safe; Safe nonce advanced from `1` to `2`.
+- post-execution readback: `isAuthorized(actionHash) == false`.
+
+The earlier failed nonce-0 attempt is not presented as successful protected
+execution. It demonstrated the expected Safe nonce binding and was superseded by
+the finalized nonce-1 decision above. The corrected Registry also rejects a
+certificate whose policy owner or intent-family hash is substituted, covered by
+the Foundry adversarial test and the live policy-binding checks in the attestor.
+
+### Negative protected-account evidence
+
+- A replay of the exact consumed authorization was rejected by the live Registry/Safe path (`isAuthorized == false`; execution helper refused before sending).
+- Mutated-recipient and delegatecall attempts were rejected by the Guard path in the live target deployment; full revert assertions remain in the real-Safe Foundry suite.
+- Policy substitution is rejected before threshold admission when the certificate does not match the Safe's bound owner/family.
+
+## Historical Protected Account Mode — superseded Sepolia evidence
+
+The following older deployment is historical and superseded. It is retained only
+to preserve the earlier evidence trail. The corrected policy-bound deployment is
+the canonical Protected Account evidence below. It is not a trustless GenLayer
+light client: the target-chain bridge is threshold-attested finalized GenLayer
+state.
 
 - Target network: Ethereum Sepolia, chain ID `11155111`
 - Registry: `0xdca0557775d387d28b3f46a49d011a1e93ba982a`

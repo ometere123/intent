@@ -31,6 +31,13 @@ const readClient = createClient({
   account: '0x0000000000000000000000000000000000000001',
 });
 const targetClient = createPublicClient({ chain: sepolia, transport: http(process.env.SEPOLIA_RPC_URL) });
+const registry = process.env.NEXT_PUBLIC_INTENT_AUTH_REGISTRY;
+if (!registry) throw new Error('NEXT_PUBLIC_INTENT_AUTH_REGISTRY is not configured');
+const registryPolicyAbi = [{ type: 'function', name: 'policyForSafe', stateMutability: 'view', inputs: [{ name: 'safe', type: 'address' }], outputs: [
+  { name: 'owner', type: 'address' }, { name: 'intentIdHash', type: 'bytes32' },
+  { name: 'pendingOwner', type: 'address' }, { name: 'pendingIntentIdHash', type: 'bytes32' },
+  { name: 'executeAfter', type: 'uint256' }, { name: 'configured', type: 'bool' },
+] }];
 
 const receipt = await readClient.getTransaction({ hash: decisionRef });
 if (!receipt) throw new Error('decision transaction not found');
@@ -81,6 +88,9 @@ const intent = JSON.parse(String(await readClient.readContract({
   args: [owner, intentId, revision],
   transactionHashVariant: 'latest_final',
 })));
+if (!decision.owner || String(decision.owner).toLowerCase() !== String(owner).toLowerCase()) {
+  throw new Error('decision owner does not match the transaction sender');
+}
 const action = decision.action;
 const validAfter = BigInt(process.env.INTENT_VALID_AFTER || (Math.floor(Date.now() / 1000) - 30));
 const requestedUntil = BigInt(process.env.INTENT_VALID_UNTIL || (Math.floor(Date.now() / 1000) + 3600));
@@ -103,6 +113,7 @@ verifyFinalizedDecision({
     revoked: Boolean(revoked),
     latestRevision: BigInt(latestRevision),
     intentId,
+    owner,
     expiresAt: BigInt(intent.expires_at_unix || 0),
   },
 });
@@ -112,11 +123,18 @@ if (String(decision.outcome).toUpperCase() !== 'MATCHES_INTENT') throw new Error
 // must be live and the bound Safe must exist before a certificate is signed.
 const safeCode = await targetClient.getBytecode({ address: candidate.safe });
 if (!safeCode) throw new Error('bound Safe has no Sepolia bytecode');
+const policy = await targetClient.readContract({ address: registry, abi: registryPolicyAbi, functionName: 'policyForSafe', args: [candidate.safe] });
+const policyOwner = policy.owner ?? policy[0];
+const policyIntentIdHash = policy.intentIdHash ?? policy[1];
+const policyConfigured = policy.configured ?? policy[5];
+if (!policyConfigured || String(policyOwner).toLowerCase() !== String(candidate.policyOwner).toLowerCase()) throw new Error('Safe policy owner binding mismatch');
+if (String(policyIntentIdHash).toLowerCase() !== String(candidate.intentIdHash).toLowerCase()) throw new Error('Safe intent family binding mismatch');
 
 const certificate = {
   protocolVersion: '1',
   genLayerChainId: candidate.genLayerChainId,
   genLayerIntent: candidate.genLayerIntent,
+  policyOwner: candidate.policyOwner,
   decisionRef: candidate.decisionRef,
   targetChainId: candidate.targetChainId,
   safe: candidate.safe,

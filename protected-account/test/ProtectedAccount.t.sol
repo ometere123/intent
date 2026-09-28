@@ -31,6 +31,7 @@ contract ProtectedAccountTest {
         c.protocolVersion = "1";
         c.genLayerChainId = 61999;
         c.genLayerIntent = address(0x1234);
+        c.policyOwner = address(this);
         c.decisionRef = keccak256("decision");
         c.targetChainId = 11155111;
         c.safe = safe;
@@ -62,7 +63,7 @@ contract ProtectedAccountTest {
 
         bytes memory setGuard = abi.encodeWithSelector(safe.setGuard.selector, address(guard));
         safe.execTransaction(address(safe), 0, setGuard, Enum.Operation.Call, 0, 0, 0, address(0), payable(0), _ownerSignature());
-        registry.registerGuard(address(safe), address(guard));
+        registry.registerGuard(address(safe), address(guard), address(this), keccak256("intent"));
     }
 
     function _admit(IntentAuthorizationRegistry registry, IntentAuthorizationRegistry.Certificate memory c) internal {
@@ -182,5 +183,52 @@ contract ProtectedAccountTest {
         safe.execTransaction(address(guard), 0, request, Enum.Operation.Call, 0, 0, 0, address(0), payable(0), _ownerSignature());
         vm.warp(block.timestamp + guard.REMOVAL_DELAY() + 1);
         safe.execTransaction(address(safe), 0, remove, Enum.Operation.Call, 0, 0, 0, address(0), payable(0), _ownerSignature());
+    }
+
+    function testSubstitutedPolicyOwnerAndFamilyAreRejected() external {
+        (Safe safe, IntentAuthorizationRegistry registry,) = _setup();
+        Target target = new Target();
+        bytes memory data = abi.encodeWithSelector(Target.ping.selector);
+        bytes32 hash = safe.getTransactionHash(address(target), 0, data, Enum.Operation.Call, 0, 0, 0, address(0), address(0), 1);
+        IntentAuthorizationRegistry.Certificate memory c = _certificate(address(safe), hash, block.timestamp + 1 days);
+
+        c.policyOwner = address(0xBEEF);
+        (bool wrongOwner,) = address(registry).call(abi.encodeWithSelector(registry.admit.selector, c, _signatures(registry, c)));
+        require(!wrongOwner, "wrong policy owner admitted");
+
+        c.policyOwner = address(this);
+        c.intentIdHash = keccak256("other-intent");
+        (bool wrongFamily,) = address(registry).call(abi.encodeWithSelector(registry.admit.selector, c, _signatures(registry, c)));
+        require(!wrongFamily, "wrong policy family admitted");
+    }
+
+    function testPolicyRotationIsDelayedAndNewPolicyIsAccepted() external {
+        (Safe safe, IntentAuthorizationRegistry registry,) = _setup();
+        bytes32 newFamily = keccak256("rotated-intent");
+        address newOwner = address(0xCAFE);
+        registry.queuePolicyBinding(address(safe), newOwner, newFamily);
+        (bool early,) = address(registry).call(abi.encodeWithSelector(registry.executePolicyBinding.selector, address(safe)));
+        require(!early, "policy rotated before delay");
+        vm.warp(block.timestamp + registry.CONFIG_DELAY() + 1);
+        registry.executePolicyBinding(address(safe));
+
+        Target target = new Target();
+        bytes memory data = abi.encodeWithSelector(Target.ping.selector);
+        bytes32 hash = safe.getTransactionHash(address(target), 0, data, Enum.Operation.Call, 0, 0, 0, address(0), address(0), 1);
+        IntentAuthorizationRegistry.Certificate memory oldPolicy = _certificate(address(safe), hash, block.timestamp + 1 days);
+        (bool oldAccepted,) = address(registry).call(abi.encodeWithSelector(registry.admit.selector, oldPolicy, _signatures(registry, oldPolicy)));
+        require(!oldAccepted, "old policy admitted after rotation");
+
+        oldPolicy.policyOwner = newOwner;
+        oldPolicy.intentIdHash = newFamily;
+        _admit(registry, oldPolicy);
+        require(registry.isAuthorized(hash), "new policy not accepted");
+    }
+
+    function _signatures(IntentAuthorizationRegistry registry, IntentAuthorizationRegistry.Certificate memory c) internal returns (bytes[] memory signatures) {
+        bytes32 digest = registry.certificateDigest(c);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, digest);
+        signatures = new bytes[](1);
+        signatures[0] = abi.encodePacked(r, s, v);
     }
 }

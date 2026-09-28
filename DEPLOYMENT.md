@@ -42,13 +42,18 @@ On Windows, use WSL for the Direct Mode suite if the native temporary-file locki
 
 See [`LIVE_EVIDENCE.md`](LIVE_EVIDENCE.md) for finalized transaction hashes, consensus outcomes, state readbacks, action IDs, and the explicit execution-receipt limitation. Do not infer target-chain execution from a positive intent decision: a receipt is only valid after a real target-chain transaction is supplied and bound.
 
-The Protected Account reference deployment is recorded in the same evidence file:
-Ethereum Sepolia Registry `0xdca0557775d387d28b3f46a49d011a1e93ba982a`, Guard
-`0x9417cf657bf65e16f1eebc25b01083498ca9e703`, protected Safe
-`0xe4eB50EB02bdBd611960c0629B3C779C1645a4c7`, and demo target
-`0xa74a3a9db4747856b196d41e29d52e996079c458`. The exact admission and Safe
-execution transactions are recorded only after their Sepolia receipts and state
-readbacks were observed.
+The canonical corrected Protected Account reference deployment is recorded in the
+same evidence file: Ethereum Sepolia Registry
+`0x6946cf884e54e89a25fde6130cf9d88d7d0e5eef`, Guard
+`0x84308509e7ac6b995bbefa6342761cd2a8fdd451`, protected Safe
+`0x2C1688c1eC10020a3919Ce67000fFa91Bf4bd778`, and demo target
+`0xa74a3a9db4747856b196d41e29d52e996079c458`. The Registry is bound to the
+canonical GenLayer INTENT contract plus the policy owner and intent-family hash;
+the exact admission transaction is
+`0x7045364748f759c4664d9900118404dfec742eaa6d7687b3675d43aebf7c1cc9`, and the
+exact Safe execution transaction is
+`0x72547bc0ba6c38b6aecd1d60c917b7e2b36a63c8f3c0572f735caa8dff5167eb`.
+The previous Sepolia addresses remain historical only.
 
 ## Network guard
 

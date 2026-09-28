@@ -8,7 +8,7 @@
 - Python dev dependencies are aligned with current official boilerplate pins (`genlayer-py` v0.18, `genlayer-test` v0.29, current `genvm-linter`).
 - wallet-guard TypeScript compiles with TypeScript 5.8.3.
 - **36 executable wallet-guard security tests pass**.
-- **8 official Safe v1.4.1 protected-account tests pass**, including real Safe proxy
+- **10 official Safe v1.4.1 protected-account tests pass**, including real Safe proxy
   installation, full Safe transaction-hash parity, nonce binding, expiry, mutation,
   failed-inner-call consumption, delegatecall blocking and delayed guard removal.
 - Two reference-attestor hash/finality rejection tests pass.
@@ -47,9 +47,9 @@
 
 - The native Windows Direct Mode harness has a temporary-file locking issue; the stable `v0.2.12` Direct Mode suite passes under WSL.
 - Static lint passes. Full `genvm-lint check` validation is not claimed because `genvm-linter 0.11.1rc2` cannot resolve the old `v0.2.12` runner archive format.
-- A real Sepolia Registry, Guard, Safe and demo target were deployed and exercised;
-  the exact admission, Safe execution and post-consumption readbacks are in
-  `LIVE_EVIDENCE.md`.
+- The corrected policy-bound Sepolia Registry, Guard, Safe and demo target were
+  deployed and exercised; the exact admission, Safe execution and
+  post-consumption readbacks are in `LIVE_EVIDENCE.md`.
 - The current Windows machine still cannot execute the Direct Mode suite reliably
   because the installed gltest loader hits a temporary-file sharing violation;
   CI/WSL remains the authoritative Direct Mode runtime path.

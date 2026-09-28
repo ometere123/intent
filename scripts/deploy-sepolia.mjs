@@ -4,10 +4,11 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
 
 const EXPECTED_CHAIN = 11155111;
-const env = Object.fromEntries(fs.readFileSync('.env.local', 'utf8').split(/\r?\n/).filter(Boolean).map((line) => {
+const fileEnv = Object.fromEntries(fs.readFileSync('.env.local', 'utf8').split(/\r?\n/).filter(Boolean).map((line) => {
   const i = line.indexOf('='); return [line.slice(0, i), line.slice(i + 1)];
 }));
-if (!env.SEPOLIA_RPC_URL || !env.DEPLOYER_PRIVATE_KEY || !env.SAFE_OWNER_PRIVATE_KEY) throw new Error('Missing local Sepolia configuration');
+const env = { ...fileEnv, ...process.env };
+if (!env.SEPOLIA_RPC_URL || !env.DEPLOYER_PRIVATE_KEY || !env.SAFE_OWNER_PRIVATE_KEY || !env.INTENT_POLICY_OWNER || !env.INTENT_POLICY_ID_HASH) throw new Error('Missing local Sepolia configuration or INTENT policy binding');
 const deployer = privateKeyToAccount(env.DEPLOYER_PRIVATE_KEY);
 const owner = privateKeyToAccount(env.SAFE_OWNER_PRIVATE_KEY);
 const attestors = [1, 2, 3, 4, 5].map((n) => privateKeyToAccount(env[`ATTESTOR_${n}_PRIVATE_KEY`]).address);
@@ -37,6 +38,8 @@ async function main() {
   console.log(`DEPLOYER=${deployer.address}`);
   console.log(`DEPLOYER_BALANCE_WEI=${balance}`);
   console.log(`SAFE_OWNER=${owner.address}`);
+  console.log(`INTENT_POLICY_OWNER=${env.INTENT_POLICY_OWNER}`);
+  console.log(`INTENT_POLICY_ID_HASH=${env.INTENT_POLICY_ID_HASH}`);
   attestors.forEach((address, i) => console.log(`ATTESTOR_${i + 1}=${address}`));
 
   const registry = await deploy(registryArtifact.abi, registryArtifact.bytecode, [
@@ -66,7 +69,7 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: installTx });
   console.log(`GUARD_INSTALL_TX=${installTx}`);
 
-  const registerTx = await wallet.writeContract({ address: registry.address, abi: registryArtifact.abi, functionName: 'registerGuard', args: [safe, guard.address] });
+  const registerTx = await wallet.writeContract({ address: registry.address, abi: registryArtifact.abi, functionName: 'registerGuard', args: [safe, guard.address, env.INTENT_POLICY_OWNER, env.INTENT_POLICY_ID_HASH] });
   await publicClient.waitForTransactionReceipt({ hash: registerTx });
   console.log(`GUARD_REGISTER_TX=${registerTx}`);
 

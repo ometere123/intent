@@ -89,11 +89,13 @@ function actionFromDecision(decision) {
 
 export function candidateFromDecision({ decision, decisionRef, authorizationNonce, validAfter, validUntil }) {
   const action = actionFromDecision(decision);
+  if (!decision.owner) throw new Error('decision has no policy owner');
   const actionHash = safeTransactionHash(action);
   return {
     ...action,
     genLayerChainId: GENLAYER_CHAIN_ID,
     genLayerIntent: decisionRef.genLayerIntent,
+    policyOwner: decision.owner,
     decisionRef: decisionRef.txHash ?? decisionRef,
     actionHash,
     intentIdHash: decision.intent_id_hash ?? keccak256(stringToHex(String(decision.intent_id))),
@@ -116,10 +118,12 @@ export function verifyFinalizedDecision({ candidate, finalizedReceipt, decision,
   if (String(action.safe).toLowerCase() !== String(candidate.safe).toLowerCase()) throw new Error('decision Safe mismatch');
   if (BigInt(action.safeNonce) !== BigInt(candidate.safeNonce)) throw new Error('decision Safe nonce mismatch');
   if (BigInt(decision.intent_revision) !== BigInt(candidate.intentRevision)) throw new Error('decision revision mismatch');
+  if (String(decision.owner).toLowerCase() !== String(candidate.policyOwner).toLowerCase()) throw new Error('decision policy owner mismatch');
   if (canonicalIntentState) {
     if (canonicalIntentState.revoked) throw new Error('intent is revoked');
     if (BigInt(canonicalIntentState.latestRevision) !== BigInt(candidate.intentRevision)) throw new Error('decision revision is no longer latest');
     if (String(canonicalIntentState.intentId).toLowerCase() !== String(decision.intent_id).toLowerCase()) throw new Error('decision intent mismatch');
+    if (String(canonicalIntentState.owner).toLowerCase() !== String(candidate.policyOwner).toLowerCase()) throw new Error('intent policy owner mismatch');
     if (canonicalIntentState.expiresAt && BigInt(canonicalIntentState.expiresAt) <= BigInt(Math.floor(Date.now() / 1000))) throw new Error('intent revision expired');
   }
   if (candidate.validUntil <= BigInt(Math.floor(Date.now() / 1000))) throw new Error('certificate expired');
@@ -131,7 +135,7 @@ export function certificateTypedData(certificate, registry) {
     domain: { name: REGISTRY_NAME, version: REGISTRY_VERSION, chainId: SEPOLIA_CHAIN_ID, verifyingContract: registry },
     types: { Certificate: [
       { name: 'protocolVersion', type: 'string' }, { name: 'genLayerChainId', type: 'uint256' },
-      { name: 'genLayerIntent', type: 'address' }, { name: 'decisionRef', type: 'bytes32' },
+      { name: 'genLayerIntent', type: 'address' }, { name: 'policyOwner', type: 'address' }, { name: 'decisionRef', type: 'bytes32' },
       { name: 'targetChainId', type: 'uint256' }, { name: 'safe', type: 'address' },
       { name: 'actionHash', type: 'bytes32' }, { name: 'intentIdHash', type: 'bytes32' },
       { name: 'intentRevision', type: 'uint256' }, { name: 'safeNonce', type: 'uint256' },

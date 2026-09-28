@@ -14,7 +14,7 @@ Date: 2026-09-28
 
 - Wallet/security suite: **36 passed**
 - Attestor tests: **3 passed**
-- Safe/Registry Foundry suite: **8 passed**
+- Safe/Registry Foundry suite: **10 passed**
 - Hash parity: **3/3 vectors passed**
 - Frontend typecheck/build: **PASS**
 - Preflight: **PASS**
@@ -33,16 +33,24 @@ Date: 2026-09-28
 - A current final-contract `UNCLEAR` protected decision was not reproduced and is
   not claimed here.
 
-## Live Sepolia evidence
+## Current live Sepolia evidence
 
-- Registry: `0xdca0557775d387d28b3f46a49d011a1e93ba982a`
-- Guard: `0x9417cf657bf65e16f1eebc25b01083498ca9e703`
-- Safe v1.4.1 proxy: `0xe4eB50EB02bdBd611960c0629B3C779C1645a4c7`
+- Registry: `0x6946cf884e54e89a25fde6130cf9d88d7d0e5eef`
+- Guard: `0x84308509e7ac6b995bbefa6342761cd2a8fdd451`
+- Safe v1.4.1 proxy: `0x2C1688c1eC10020a3919Ce67000fFa91Bf4bd778`
 - Demo target: `0xa74a3a9db4747856b196d41e29d52e996079c458`
-- Certificate admission: `0x29420cddf1e0742b9f7a7c0d9bf589607fd5d85718360234d68681268ed70f87`
-- Exact Safe execution: `0x27ef89740ed8c981aa03c1fc80e521dee029f2dbe6c04a7934369b3962ed1c25`
-- The target `pingCount` changed to `1`, and the authorization read back `false`
+- Certificate admission: `0x7045364748f759c4664d9900118404dfec742eaa6d7687b3675d43aebf7c1cc9`
+- Exact Safe execution: `0x72547bc0ba6c38b6aecd1d60c917b7e2b36a63c8f3c0572f735caa8dff5167eb`
+- The target `pingCount` changed to `2`, the Safe nonce advanced to `2`, and the authorization read back `false`
   after execution. Replay, mutation and delegatecall simulations reverted.
+
+The fresh matching GenLayer decision was
+`0x466171198c2bd76f01258bcc274e40d104a945aedc3bb570c4776a8f0704c90e`,
+`FINALIZED / MAJORITY_AGREE / SUCCESS`, with action hash
+`0x3fbaaf1a0a63fb431162030543e01aac8de715bb75de0aab64f5dd3f162eb878`.
+The Registry binds this Safe to policy owner
+`0xb29Ead15B1E8A2420faE84de974088f67a15ccC2` and intent-family hash
+`0xa50095f8799fd7ad8c0ccc0d9e87b62de185970b87420aaa21c2e64fc15bfd1a`.
 
 ## Limitations
 

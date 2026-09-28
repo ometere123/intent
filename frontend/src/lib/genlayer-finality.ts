@@ -45,6 +45,11 @@ function executionEvidence(receipt: Record<string, unknown>): string[] {
     for (const entry of entries) {
       if (!entry || typeof entry !== 'object') continue;
       const item = entry as Record<string, unknown>;
+      const genvmResult = item.genvm_result ?? item.genvmResult;
+      const stderr = genvmResult && typeof genvmResult === 'object'
+        ? String((genvmResult as Record<string, unknown>).stderr ?? '').toLowerCase()
+        : '';
+      if (stderr.includes('cancelled after quorum') || stderr.includes('quorum reached')) continue;
       add(item.execution_result ?? item.executionResult ?? item.tx_execution_result ?? item.txExecutionResult);
     }
   }
@@ -59,8 +64,8 @@ export function classifyGenLayerReceipt(receipt: unknown): GenLayerLifecycleStat
 
   if (status === 'FINALIZED') {
     const evidence = executionEvidence(raw);
-    const hasSuccess = evidence.includes('FINISHED_WITH_RETURN');
-    const hasError = evidence.includes('FINISHED_WITH_ERROR');
+    const hasSuccess = evidence.includes('FINISHED_WITH_RETURN') || evidence.includes('SUCCESS');
+    const hasError = evidence.includes('FINISHED_WITH_ERROR') || evidence.includes('ERROR') || evidence.includes('FAILED');
     if (hasSuccess && !hasError) return 'FINALIZED_EXECUTION_SUCCESS';
     if (hasError && !hasSuccess) return 'FINALIZED_EXECUTION_ERROR';
     return 'UNKNOWN_EXECUTION_STATE';

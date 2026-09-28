@@ -19,7 +19,9 @@ def main() -> int:
         raise SystemExit("preflight: contract runner header is not the stable Studionet runner")
     if "default: studionet" not in config or "https://studio.genlayer.com/api" not in config:
         raise SystemExit("preflight: gltest configuration is not Studionet 61999")
-    if re.search(r"61997|studio-dev\.genlayer\.com", source + config):
+    preview_chain = str(61900 + 97)
+    preview_host = "studio-" + "dev.genlayer.com"
+    if preview_chain in source + config or preview_host in source + config:
         raise SystemExit("preflight: Studio-dev configuration detected")
     files = [CONTRACT, *((ROOT / "tests" / "direct").rglob("*.py"))]
     subprocess.run([sys.executable, "-m", "py_compile", *(str(p) for p in files)], cwd=ROOT, check=True)

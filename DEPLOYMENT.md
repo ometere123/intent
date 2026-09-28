@@ -20,8 +20,6 @@ The previous `1.1.0` deployment at `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D`
 superseded by this `1.2.0` deployment, which binds hard rules into immutable
 intent revisions. It remains historical evidence only.
 
-The deployment used the working-tree source representation derived from baseline commit `dbe38adfd4b8984c7c10f6221f4834555ef8dba0`. Git normalizes text line endings in the committed blob, so the recorded deployment bytes/hash are preserved as observed evidence and are not claimed as raw byte-for-byte Git-blob parity.
-
 ## Reproduce checks
 
 ```bash

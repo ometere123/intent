@@ -70,10 +70,10 @@ created a current revision on the canonical Studionet contract:
 - canonical readback: `get_latest_revision(...) == 1`; `get_intent(...)` matched the
   submitted statement, scope, owner and hard rules.
 
-This is real browser-wallet mandate evidence. It is not being presented as a
-complete Compatibility Mode target-chain send: the deployed control plane does
-not currently expose a browser button that runs `IntentGuardProvider` through a
-real target transaction.
+This is real browser-wallet mandate evidence. The deployed control plane now
+exposes a Compatibility Mode guarded-send route, but that target-chain send was
+not executed in this evidence pass. The route is therefore not being presented
+as a completed browser target-transaction proof yet.
 
 ## Compatibility-mode execution anchor
 

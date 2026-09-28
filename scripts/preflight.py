@@ -22,7 +22,7 @@ def main() -> int:
     preview_chain = str(61900 + 97)
     preview_host = "studio-" + "dev.genlayer.com"
     if preview_chain in source + config or preview_host in source + config:
-        raise SystemExit("preflight: Studio-dev configuration detected")
+        raise SystemExit("preflight: preview-network configuration detected")
     files = [CONTRACT, *((ROOT / "tests" / "direct").rglob("*.py"))]
     subprocess.run([sys.executable, "-m", "py_compile", *(str(p) for p in files)], cwd=ROOT, check=True)
     print(f"preflight PASS: Studionet 61999, stable runner, {len(files)} Python files compiled")

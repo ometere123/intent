@@ -14,6 +14,7 @@ Date: 2026-09-28
 
 - Wallet/security suite: **36 passed**
 - Attestor tests: **3 passed**
+- Frontend finality tests: **4 passed**
 - Safe/Registry Foundry suite: **10 passed**
 - Hash parity: **3/3 vectors passed**
 - Frontend typecheck/build: **PASS**

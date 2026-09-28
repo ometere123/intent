@@ -12,6 +12,8 @@
   installation, full Safe transaction-hash parity, nonce binding, expiry, mutation,
   failed-inner-call consumption, delegatecall blocking and delayed guard removal.
 - Two reference-attestor hash/finality rejection tests pass.
+- Four frontend finality-state tests pass, including cancelled-after-quorum,
+  missing-evidence and contradictory-execution cases.
 - cross-language canonical-action SHA-256 parity passes for representative JS/Python requests.
 - contract and Direct Mode test files pass Python syntax compilation.
 - frontend TypeScript typecheck and production build pass with installed dependencies.

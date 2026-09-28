@@ -53,6 +53,21 @@ The Registry binds this Safe to policy owner
 `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2` and intent-family hash
 `0xa50095f8799fd7ad8c0ccc0d9e87b62de185970b87420aaa21c2e64fc15bfd1a`.
 
+## Browser control-plane evidence
+
+- Production frontend: [`https://intent-beta-jade.vercel.app`](https://intent-beta-jade.vercel.app)
+- Production deployment is `Ready`, with the public Registry and Guard
+  addresses rendered from the deployment configuration.
+- A real Chrome wallet session connected as
+  `0x81301DD9C3605a7DA743D87b803156d8445620B0` and created
+  `browser-demo-2026-09-28` revision 1 on Studionet:
+  [`0xe68a84233b5468d6cb8a8794d349eb8f5025607bc4f3cb4f6222d9ff51e09093`](https://explorer-studio.genlayer.com/tx/0xe68a84233b5468d6cb8a8794d349eb8f5025607bc4f3cb4f6222d9ff51e09093)
+- `latest_final` readback returned revision `1`, the connected owner, and the
+  exact submitted statement, scope and hard rules.
+- A browser-wallet Compatibility Mode guarded target send was not executed in
+  this pass; this evidence proves real wallet connection and mandate creation,
+  not a complete guarded target-chain send.
+
 ## Limitations
 
 The attestors are five test-controlled keys operated under a 3-of-5 threshold;
@@ -60,5 +75,6 @@ they are not independent operators. This is threshold-attested finalized
 GenLayer authorization, not a native trustless GenLayer light client. The
 reviewer-facing frontend is publicly deployed at
 `https://intent-beta-jade.vercel.app` and its root HTML was externally verified
-over HTTPS. Browser-wallet signing E2E and a fresh current UNCLEAR protected flow
-remain unclaimed.
+over HTTPS. Browser mandate creation was exercised with a real wallet session;
+complete browser-wallet guarded-send E2E and a fresh current UNCLEAR protected
+flow remain unclaimed.

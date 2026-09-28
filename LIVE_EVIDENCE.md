@@ -58,6 +58,23 @@ The CLI wrapper was not used for these successful writes because its Windows she
 - `demo-intent` revocation: [`0x21cca906678eea8d69069de99aa727242c942b3788b7a5c58698587a17681f6f`](https://explorer-studio.genlayer.com/tx/0x21cca906678eea8d69069de99aa727242c942b3788b7a5c58698587a17681f6f)
 - Both finalized as `ACCEPTED / MAJORITY_AGREE / SUCCESS`.
 
+## Compatibility-mode browser evidence
+
+A real Chrome wallet session connected to the production control plane and
+created a current revision on the canonical Studionet contract:
+
+- frontend: [`https://intent-beta-jade.vercel.app`](https://intent-beta-jade.vercel.app)
+- connected account: `0x81301DD9C3605a7DA743D87b803156d8445620B0`
+- intent: `browser-demo-2026-09-28`, revision `1`
+- finalized creation transaction: [`0xe68a84233b5468d6cb8a8794d349eb8f5025607bc4f3cb4f6222d9ff51e09093`](https://explorer-studio.genlayer.com/tx/0xe68a84233b5468d6cb8a8794d349eb8f5025607bc4f3cb4f6222d9ff51e09093)
+- canonical readback: `get_latest_revision(...) == 1`; `get_intent(...)` matched the
+  submitted statement, scope, owner and hard rules.
+
+This is real browser-wallet mandate evidence. It is not being presented as a
+complete Compatibility Mode target-chain send: the deployed control plane does
+not currently expose a browser button that runs `IntentGuardProvider` through a
+real target transaction.
+
 ## Compatibility-mode execution anchor
 
 The historical Compatibility Mode run documented here did not call

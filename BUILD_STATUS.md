@@ -19,8 +19,10 @@
 - frontend TypeScript typecheck and production build pass with installed dependencies.
 - the reviewer-facing frontend is deployed at
   `https://intent-beta-jade.vercel.app`; an external HTTPS smoke request returned
-  HTTP 200 and the INTENT application HTML. Browser-wallet signing E2E remains
-  unclaimed.
+  HTTP 200 and the INTENT application HTML. Production Registry and Guard
+  addresses are configured in the public build. A real Chrome wallet session
+  created a finalized mandate revision, but complete browser-wallet guarded-send
+  E2E remains unclaimed.
 - executable/config source passes the Studionet-only chain scan.
 - no fail-open option exists in the wallet guard.
 - no 61997 preview-chain literal exists in executable/config source.

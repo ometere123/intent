@@ -124,7 +124,7 @@ class IntentGuard(gl.Contract):
         self.revoked[family] = False
 
         if gl.message.sender_address not in self.owner_intents:
-            self.owner_intents[gl.message.sender_address] = DynArray[str]()
+            self.owner_intents[gl.message.sender_address] = []
         self.owner_intents[gl.message.sender_address].append(intent_id)
 
     @gl.public.write
@@ -345,7 +345,7 @@ Return JSON only:
         self.decisions[decision_key] = json.dumps(record, sort_keys=True)
 
         if gl.message.sender_address not in self.owner_actions:
-            self.owner_actions[gl.message.sender_address] = DynArray[str]()
+            self.owner_actions[gl.message.sender_address] = []
         self.owner_actions[gl.message.sender_address].append(action_id)
 
     @gl.public.write
@@ -388,7 +388,7 @@ Return JSON only:
         size = int(limit)
         if size < 1 or size > 100:
             raise gl.vm.UserError("limit must be between 1 and 100")
-        values = self.owner_intents.get(owner_address, DynArray[str]())
+        values = self.owner_intents.get(owner_address, [])
         start = int(offset)
         if start >= len(values):
             return []
@@ -399,7 +399,7 @@ Return JSON only:
         size = int(limit)
         if size < 1 or size > 100:
             raise gl.vm.UserError("limit must be between 1 and 100")
-        values = self.owner_actions.get(owner_address, DynArray[str]())
+        values = self.owner_actions.get(owner_address, [])
         start = int(offset)
         if start >= len(values):
             return []
@@ -449,8 +449,8 @@ Return JSON only:
     def get_owner_counts(self, owner_address: str) -> typing.Any:
         owner = Address(owner_address)
         return {
-            "intent_count": len(self.owner_intents.get(owner, DynArray[str]())),
-            "action_count": len(self.owner_actions.get(owner, DynArray[str]())),
+            "intent_count": len(self.owner_intents.get(owner, [])),
+            "action_count": len(self.owner_actions.get(owner, [])),
         }
 
     @gl.public.view

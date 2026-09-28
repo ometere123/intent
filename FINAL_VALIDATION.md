@@ -1,6 +1,6 @@
 # Final local validation record
 
-Date: 2026-09-27
+Date: 2026-09-28
 
 This file records what was actually executed in the preparation container. It deliberately separates green local evidence from checks that require dependencies, GenLayer tooling, network access or a funded wallet.
 
@@ -18,7 +18,9 @@ This file records what was actually executed in the preparation container. It de
 - Local GenVM AST safety precheck — PASS for the current documented safety categories checked here: dependency header present, no forbidden import set, no forbidden time/uuid calls, no float literals, no bare built-in exception raises.
 - Contract uses integer-only UTC epoch conversion; no `datetime.timestamp()` float round-trip in executable code.
 
-## Explicitly blocked here
+## Historical preparation notes
+
+The original preparation-container blockers below are historical and were cleared in the online continuation environment.
 
 ### Frontend dependency typecheck/build
 
@@ -38,8 +40,8 @@ Registry reachability was checked with `npm ping --fetch-timeout=5000 --fetch-re
 
 ### Live Studionet
 
-`node scripts/assert-studionet.mjs` failed closed because the RPC could not be reached from this container. No deployment was attempted. The live contract address, transaction IDs, validator outcomes and fee accounting in `LIVE_EVIDENCE.md` remain intentionally pending.
+These statements describe the 2026-09-27 preparation container only. The live deployment and finalized validator evidence are recorded in `LIVE_EVIDENCE.md`.
 
 ## Handoff command order
 
-Use `CODEX_HANDOFF.md` as the authoritative continuation prompt. In an online environment with the current GenLayer toolchain and a funded 61999 wallet, start with dependency install, official GenVM lint, Direct Mode, real Next typecheck/build, independent 61999 network verification, then deployment and the live evidence matrix.
+The continuation was completed with dependency installation, stable Studionet verification, deployment, Direct Mode, frontend build, and finalized live consensus evidence. See `DEPLOYMENT.md` and `LIVE_EVIDENCE.md`.

@@ -51,16 +51,11 @@ async function write(provider: EIP1193Provider, functionName: string, args: unkn
   try {
     const { client, contract } = await connectedWrite(provider);
     const request = { address: contract, functionName, args };
-    const estimate = await client.estimateTransactionFeesForWrite(request as never);
     const hash = await client.writeContract({
       ...request,
-      fees: {
-        distribution: estimate.distribution,
-        messageAllocations: estimate.messageAllocations,
-        feeValue: estimate.feeValue,
-      },
+      value: BigInt(0),
     } as never);
-    const receipt = await client.waitForTransactionReceipt({ hash, waitUntil: 'finalized' } as never);
+    const receipt = await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' } as never);
     if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
       throw new Error(`GenLayer write failed: ${String(receipt.txExecutionResultName)}`);
     }

@@ -1,49 +1,44 @@
 # INTENT deployment
 
-INTENT deploys **only** to GenLayer Studionet.
+INTENT deploys only to GenLayer Studionet.
 
 - Network: Studionet
 - Chain ID: `61999`
 - RPC: `https://studio.genlayer.com/api`
+- Explorer: `https://explorer-studio.genlayer.com`
 - Repository-local CLI: `genlayer@0.39.1`
+- Deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`
+- Contract: `0xAc5b56ebB95132fC75736E8AFb715c9AE072d42D`
+- Deployment transaction: `0x4367d3fa31f2a1cfc67315a514bc3fefde19471aa6436e8a9e1c01069127a3c2`
+- Deployment result: `ACCEPTED / MAJORITY_AGREE / SUCCESS`
+- Source bytes: `20,721`
+- Source SHA-256: `27ce002c89b38f6e4263d7bba23dc4b15900443edd909bbfcd9fa0ccaaf40376`
 
-Do not use Studio Dev, chain 61997, or the machine-global `0.40.0rc2` CLI.
+The deployment used the working-tree source representation derived from baseline commit `dbe38adfd4b8984c7c10f6221f4834555ef8dba0`. Git normalizes text line endings in the committed blob, so the recorded deployment bytes/hash are preserved as observed evidence and are not claimed as raw byte-for-byte Git-blob parity.
 
-## Install
+## Reproduce checks
 
 ```bash
 npm install
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-On Windows, use the equivalent virtual-environment activation command or WSL.
-
-## Toolchain and source checks
-
-```bash
 npm run check:cli-pin
 npm run cli:version
 npm run check:source-network
 npm test
-genvm-lint check contracts/intent_guard.py
-pytest tests/direct -v -s
 npm run typecheck
 npm run build
+npm run preflight
+pytest tests/direct -v -s
 ```
 
-Require the CLI version output to be exactly `0.39.1`.
+On Windows, use WSL for the Direct Mode suite if the native temporary-file locking issue appears. The test harness pins the stable `v0.2.12` runner deliberately; it does not migrate INTENT to the v0.3 RC runner.
 
-## Select and independently verify Studionet
+## Live evidence
 
-```bash
-npm run cli:network:studionet
-npm run cli:network:info
-node scripts/assert-studionet.mjs
-```
+See [`LIVE_EVIDENCE.md`](LIVE_EVIDENCE.md) for finalized transaction hashes, consensus outcomes, state readbacks, action IDs, and the explicit execution-receipt limitation. Do not infer target-chain execution from a positive intent decision: a receipt is only valid after a real target-chain transaction is supplied and bound.
 
-Before signing anything, require all active evidence to agree on:
+## Network guard
+
+Before signing or submitting a transaction, require the active environment to report exactly:
 
 ```text
 Studionet
@@ -51,41 +46,4 @@ Studionet
 https://studio.genlayer.com/api
 ```
 
-If any active configuration says 61997 or Studio Dev, stop.
-
-## Deploy
-
-```bash
-npm run deploy:studionet
-```
-
-Record the exact deployed source commit, deployment transaction, finality and contract address in `LIVE_EVIDENCE.md`.
-
-Then:
-
-```bash
-export INTENT_CONTRACT_ADDRESS=0x...
-npm run postdeploy:check
-```
-
-The post-deploy check must report chain 61999 and the expected INTENT contract identity.
-
-## Frontend configuration
-
-```bash
-cp frontend/.env.example frontend/.env.local
-```
-
-Set:
-
-```text
-NEXT_PUBLIC_GENLAYER_RPC_URL=https://studio.genlayer.com/api
-NEXT_PUBLIC_GENLAYER_CHAIN_ID=61999
-NEXT_PUBLIC_INTENT_CONTRACT_ADDRESS=0x...
-```
-
-Then run the production build again.
-
-## Live completion
-
-Use `LIVE_DEMO.md`, `tests/integration/README.md` and `AGENT_HANDOFF.md`. Do not fill any evidence field until the corresponding transaction/state was actually observed.
+If any active configuration says `61997`, Studio Dev, or `https://studio-dev.genlayer.com`, stop.

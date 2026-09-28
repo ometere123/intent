@@ -47,4 +47,4 @@ The protocol proves a narrower statement: against one immutable human mandate re
 
 ## Live evidence
 
-Deployment address, final source commit, transaction IDs, fee measurements and real validator outcomes remain in `LIVE_EVIDENCE.md` and must only be populated from actual finalized Studionet 61999 runs.
+Deployment address, transaction IDs and real validator outcomes are recorded in `LIVE_EVIDENCE.md` from finalized Studionet 61999 runs. The live run did not execute a target-chain transaction, so no execution-receipt anchor is claimed.

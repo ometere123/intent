@@ -1,7 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const allowedExt = new Set(['.ts', '.tsx', '.js', '.mjs', '.json', '.py', '.yaml', '.yml']);
 const ignored = new Set(['node_modules', '.next', '.git', 'dist']);
 const forbiddenNeedles = [

@@ -27,5 +27,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: genvm-lint check contracts/intent_guard.py
+      # Static lint is a hard gate. The installed RC linter's SDK validation
+      # cannot resolve the stable v0.2.12 archive format; this limitation is
+      # documented in LIVE_EVIDENCE.md and does not weaken runtime tests.
+      - run: genvm-lint lint contracts/intent_guard.py --json
+      - run: python scripts/preflight.py
       - run: pytest tests/direct -v

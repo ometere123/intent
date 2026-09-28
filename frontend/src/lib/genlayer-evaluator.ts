@@ -58,9 +58,8 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
       const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
       await client.connect('studionet');
       const write={address:contractAddress,functionName:'evaluate',args:[input.intent.id,input.intent.revision,input.actionId,actionJson,input.decodedSummary,checksJson]};
-      const estimate=await client.estimateTransactionFeesForWrite(write as never);
-      const txHash=await client.writeContract({...write,fees:{distribution:estimate.distribution,messageAllocations:estimate.messageAllocations,feeValue:estimate.feeValue}} as never);
-      const receipt=await client.waitForTransactionReceipt({hash:txHash,waitUntil:'finalized'} as never);
+      const txHash=await client.writeContract({...write,value:BigInt(0)} as never);
+      const receipt=await client.waitForTransactionReceipt({hash:txHash,status:'FINALIZED'} as never);
       if(receipt.txExecutionResultName!==ExecutionResult.FINISHED_WITH_RETURN) throw new Error(`INTENT adjudication execution failed: ${String(receipt.txExecutionResultName)}`);
       const raw=await client.readContract({address:contractAddress,functionName:'get_decision',args:[owner,input.actionId],stateStatus:'finalized'} as never);
       const decision=parseDecision(raw);
@@ -76,9 +75,8 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
         const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
         await client.connect('studionet');
         const write={address:contractAddress,functionName:'record_execution_receipt',args:[decision.actionId,targetChainId,targetTxHash]};
-        const estimate=await client.estimateTransactionFeesForWrite(write as never);
-        const receiptTx=await client.writeContract({...write,fees:{distribution:estimate.distribution,messageAllocations:estimate.messageAllocations,feeValue:estimate.feeValue}} as never);
-        const receipt=await client.waitForTransactionReceipt({hash:receiptTx,waitUntil:'finalized'} as never);
+        const receiptTx=await client.writeContract({...write,value:BigInt(0)} as never);
+        const receipt=await client.waitForTransactionReceipt({hash:receiptTx,status:'FINALIZED'} as never);
         if(receipt.txExecutionResultName!==ExecutionResult.FINISHED_WITH_RETURN) throw new Error(`Receipt anchor execution failed: ${String(receipt.txExecutionResultName)}`);
       } finally {
         if(before && before!==EXPECTED_CHAIN){

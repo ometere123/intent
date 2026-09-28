@@ -15,6 +15,7 @@
     "check:network": "node scripts/assert-studionet.mjs",
     "deploy:studionet": "npm run check:cli-pin && npm run cli:network:studionet && node scripts/assert-studionet.mjs && node scripts/genlayer-local.mjs deploy --contract contracts/intent_guard.py",
     "test:contract:direct": "pytest tests/direct -v",
+    "preflight": "python scripts/preflight.py",
     "check:source-network": "node scripts/verify-studionet-only.mjs",
     "test:hash-parity": "npm --workspace packages/wallet-guard run build && node tests/cross-language/hash-parity.mjs",
     "test": "npm run check:cli-pin && npm run test:sdk && npm run test:hash-parity && npm run check:source-network",

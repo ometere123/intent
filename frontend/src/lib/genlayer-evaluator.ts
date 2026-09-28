@@ -6,6 +6,11 @@ import { requireFinalizedExecutionSuccess } from './genlayer-finality';
 const EXPECTED_CHAIN = 61999;
 const STUDIONET_HEX = '0xf22f';
 const OUTCOMES = new Set(['MATCHES_INTENT','DOES_NOT_MATCH','UNCLEAR']);
+// Studionet consensus commonly spends longer than the SDK's short default
+// polling window. A timeout here must not turn a still-live transaction into a
+// false adjudication failure before the guarded provider can restore the target
+// chain and forward the exact captured request.
+const FINALITY_WAIT = { interval: 5000, retries: 180, fullTransaction: true };
 
 function parseChainId(raw: unknown): number {
   if (typeof raw !== 'string' || !/^0x[0-9a-fA-F]+$/.test(raw)) return 0;
@@ -58,7 +63,7 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
       const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
       const write={address:contractAddress,functionName:'evaluate',args:[input.intent.id,input.intent.revision,input.actionId,actionJson,input.decodedSummary,checksJson]};
       const txHash=await client.writeContract({...write,value:BigInt(0)} as never);
-      const receipt=await client.waitForTransactionReceipt({hash:txHash,status:'FINALIZED'} as never);
+      const receipt=await client.waitForTransactionReceipt({hash:txHash,status:'FINALIZED',...FINALITY_WAIT} as never);
       requireFinalizedExecutionSuccess(receipt);
       const raw=await client.readContract({address:contractAddress,functionName:'get_decision',args:[owner,input.actionId],stateStatus:'finalized'} as never);
       const decision=parseDecision(raw);
@@ -74,7 +79,7 @@ export function createGenLayerIntentEvaluator(options:{contractAddress:`0x${stri
         const client=createClient({chain:studionet,account:owner,provider:genLayerProvider as never});
         const write={address:contractAddress,functionName:'record_execution_receipt',args:[decision.actionId,targetChainId,targetTxHash]};
         const receiptTx=await client.writeContract({...write,value:BigInt(0)} as never);
-        const receipt=await client.waitForTransactionReceipt({hash:receiptTx,status:'FINALIZED'} as never);
+        const receipt=await client.waitForTransactionReceipt({hash:receiptTx,status:'FINALIZED',...FINALITY_WAIT} as never);
         requireFinalizedExecutionSuccess(receipt);
       } finally {
         if(before && before!==EXPECTED_CHAIN){

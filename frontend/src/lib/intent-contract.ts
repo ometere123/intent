@@ -7,6 +7,7 @@ const CONTRACT = process.env.NEXT_PUBLIC_INTENT_CONTRACT_ADDRESS as `0x${string}
 const STUDIONET_HEX = '0xf22f';
 const EXPECTED_CHAIN = 61999;
 const PAGE_SIZE = 100;
+const FINALITY_WAIT = { interval: 5000, retries: 180, fullTransaction: true };
 
 function contractAddress(): `0x${string}` {
   if (!CONTRACT || !/^0x[0-9a-fA-F]{40}$/.test(CONTRACT)) {
@@ -54,7 +55,7 @@ async function write(provider: EIP1193Provider, functionName: string, args: unkn
       ...request,
       value: BigInt(0),
     } as never);
-    const receipt = await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' } as never);
+    const receipt = await client.waitForTransactionReceipt({ hash, status: 'FINALIZED', ...FINALITY_WAIT } as never);
     requireFinalizedExecutionSuccess(receipt);
     return hash;
   } finally {
